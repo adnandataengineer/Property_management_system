@@ -1,0 +1,10 @@
+# requirements.txt
+django
+psycopg2-binary
+Pillow
+gunicorn
+whitenoise
+python-dotenv
+dj-database-url
+django-storages
+boto3

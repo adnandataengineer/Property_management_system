@@ -1,0 +1,9 @@
+# requirements.txt
+Django>=5.2.3
+psycopg2-binary
+Pillow
+gunicorn
+whitenoise
+python-dotenv
+dj-database-url
+django-storages[boto3]

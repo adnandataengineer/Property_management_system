@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h4>Tenant: {{ tenant.full_name }}</h4>
+    <a href="{% url 'tenants:tenant_list' %}" class="btn btn-outline-secondary btn-sm">Back to List</a>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <!-- Tenant info -->
+      <div class="col-md-6">
+        <ul class="list-group list-group-flush mb-3">
+          <li class="list-group-item"><strong>Email:</strong> {{ tenant.email }}</li>
+          <li class="list-group-item"><strong>Property:</strong> {{ tenant.property.street_number }} {{ tenant.property.street_name }}</li>
+          <li class="list-group-item"><strong>Move In Date:</strong> {{ tenant.move_in_date }}</li>
+          <li class="list-group-item"><strong>Move Out Date:</strong> {{ tenant.move_out_date }}</li>
+          <li class="list-group-item"><strong>Notice Date:</strong> {{ tenant.notice_date }}</li>
+          <li class="list-group-item"><strong>Phone:</strong> {{ tenant.phone_number }}</li>
+          <li class="list-group-item"><strong>PPS Number:</strong> {{ tenant.pps_number }}</li>
+          <li class="list-group-item"><strong>Smoker:</strong> {{ tenant.smoker|yesno:"Yes,No" }}</li>
+          <li class="list-group-item"><strong>Current Income:</strong> {{ tenant.current_income }}</li>
+          <li class="list-group-item"><strong>License Fee:</strong> {{ tenant.license_fee }}</li>
+          <li class="list-group-item"><strong>Deposit:</strong> {{ tenant.deposit }}</li>
+        </ul>
+
+        {% if tenant.passport_upload %}
+          <!-- Trigger the modal -->
+          <button type="button"
+                  class="btn btn-primary"
+                  data-toggle="modal"
+                  data-target="#passportModal">
+            View Passport
+          </button>
+        {% else %}
+          <p class="text-muted">No passport uploaded.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if tenant.passport_upload %}
+    <!-- Passport Modal -->
+    <div class="modal fade" id="passportModal" tabindex="-1" aria-labelledby="passportModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="passportModalLabel">Passport Document</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body text-center">
+            {% with url=tenant.passport_upload.url %}
+              {% if url|slice:"-4:" == ".pdf" %}
+                <embed src="{{ url }}"
+                       type="application/pdf"
+                       width="100%"
+                       height="600px" />
+              {% else %}
+                <img src="{{ url }}"
+                     alt="Passport"
+                     class="img-fluid border" />
+              {% endif %}
+            {% endwith %}
+          </div>
+          <div class="modal-footer">
+            <a href="{{ tenant.passport_upload.url }}"
+               download
+               class="btn btn-outline-primary">
+              Download Passport
+            </a>
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-dismiss="modal">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

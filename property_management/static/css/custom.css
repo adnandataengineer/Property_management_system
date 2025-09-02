@@ -1,0 +1,99 @@
+/* Card hover effect */
+.interactive-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+.interactive-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+/* Button animation */
+.btn-primary {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.btn-primary:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+/* Navbar link underline on hover */
+.navbar-nav .nav-link {
+  position: relative;
+  transition: color 0.2s ease;
+}
+.navbar-nav .nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #007bff;
+  transition: width 0.3s ease;
+}
+.navbar-nav .nav-link:hover::after {
+  width: 100%;
+}
+
+/* Fade transition */
+.stylish-carousel.carousel-fade .carousel-item {
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+.stylish-carousel.carousel-fade .carousel-item.active {
+  opacity: 1;
+}
+
+/* Image styling */
+.stylish-carousel .carousel-item img,
+.stylish-carousel .carousel-item video {
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  object-fit: cover;
+  max-height: 500px;
+}
+
+
+/* Controls color inversion */
+.stylish-carousel .carousel-control-prev-icon,
+.stylish-carousel .carousel-control-next-icon {
+  filter: invert(1);
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Indicators */
+.stylish-carousel .carousel-indicators li {
+  background-color: rgba(255,255,255,0.7);
+  width: 1rem;
+  height: 1rem;
+}
+.stylish-carousel .carousel-indicators .active {
+  background-color: #ffc107;
+}
+
+/* Caption at the top */
+.stylish-carousel .carousel-caption {
+  position: absolute;
+  top: 1rem;             /* move to top */
+  bottom: auto;          /* cancel bottom positioning */
+  left: 50%;             /* keep centered horizontally */
+  transform: translateX(-50%);
+  max-width: 60%;        /* width limit */
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 0.25rem;
+  z-index: 1;
+  pointer-events: none;  /* let clicks through to controls */
+}
+
+
+/* Caption text styling stays the same */
+.stylish-carousel .carousel-caption p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #ffc107;
+  pointer-events: auto;
+}
+

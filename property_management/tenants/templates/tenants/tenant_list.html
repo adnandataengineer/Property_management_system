@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Tenants</h2>
+  <form class="form-inline" method="get">
+    <input class="form-control mr-2" type="search" name="q" placeholder="Search tenants..." value="{{ request.GET.q }}">
+    <button class="btn btn-outline-primary" type="submit">Search</button>
+  </form>
+</div>
+<div class="row">
+  {% for t in tenants %}
+  <div class="col-md-4 mb-4">
+    <div class="card interactive-card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ t.full_name }}</h5>
+        <p class="card-text"><strong>Property:</strong> {{ t.property.street_number }} {{ t.property.street_name }}</p>
+        <p class="card-text"><strong>Move In:</strong> {{ t.move_in_date }}</p>
+        <p class="card-text"><strong>Move Out:</strong> {{ t.move_out_date }}</p>
+        <a href="{% url 'tenants:tenant_detail' t.pk %}" class="mt-auto btn btn-primary" target="_blank">View Details</a>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <p>No tenants found.</p>
+  {% endfor %}
+</div>
+<nav aria-label="Page navigation">
+  {% if is_paginated %}
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a></li>
+    {% else %}
+    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+    {% endif %}
+    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}
+    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a></li>
+    {% else %}
+    <li class="page-item disabled"><span class="page-link">Next</span></li>
+    {% endif %}
+  </ul>
+  {% endif %}
+</nav>
+{% endblock %}

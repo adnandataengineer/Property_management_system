@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Property Details</h2>
+
+<div class="card mb-4">
+  <!-- Carousel -->
+  <div id="propertyCarousel"
+       class="carousel slide carousel-fade stylish-carousel"
+       data-ride="carousel">
+
+    <!-- Indicators -->
+    <ol class="carousel-indicators">
+      {% for img in property.images.all %}
+        <li data-target="#propertyCarousel"
+            data-slide-to="{{ forloop.counter0 }}"
+            class="{% if forloop.first %}active{% endif %}"></li>
+      {% endfor %}
+      {% if property.property_video %}
+        <li data-target="#propertyCarousel"
+            data-slide-to="{{ property.images.count }}"
+            class="{% if property.images.count == 0 %}active{% endif %}"></li>
+      {% endif %}
+    </ol>
+
+    <!-- Slides -->
+    <div class="carousel-inner">
+      {% if property.images.count %}
+        {% for img in property.images.all %}
+          <div class="carousel-item{% if forloop.first %} active{% endif %}">
+            <img src="{{ img.image.url }}"
+                 class="d-block w-100"
+                 alt="{{ img.caption }}">
+            {% if img.caption %}
+              <div class="carousel-caption">
+                <p>{{ img.caption }}</p>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+        {% if property.property_video %}
+          <div class="carousel-item">
+            <video class="d-block w-100" controls>
+              <source src="{{ property.property_video.url }}" type="video/mp4">
+              Your browser doesn’t support the video tag.
+            </video>
+          </div>
+        {% endif %}
+      {% else %}
+        {% if property.property_video %}
+          <div class="carousel-item active">
+            <video class="d-block w-100" controls>
+              <source src="{{ property.property_video.url }}" type="video/mp4">
+              Your browser doesn’t support the video tag.
+            </video>
+          </div>
+        {% else %}
+          <div class="carousel-item active">
+            <div class="text-center p-5 bg-light">No Media Available</div>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Controls -->
+    <a class="carousel-control-prev"
+       href="#propertyCarousel"
+       role="button"
+       data-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="sr-only">Previous</span>
+    </a>
+    <a class="carousel-control-next"
+       href="#propertyCarousel"
+       role="button"
+       data-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="sr-only">Next</span>
+    </a>
+  </div>
+
+  <!-- Property Details -->
+  <div class="card-body mt-3">
+
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="card-title mb-0">{{ property.street_number }} {{ property.street_name }}</h5>
+    {% if property.is_available %}
+      <span class="badge bg-success">Available</span>
+    {% else %}
+      <span class="badge bg-secondary">Unavailable</span>
+    {% endif %}
+  </div>
+
+  {% if property.is_available %}
+    <a class="btn btn-success mb-3" href="{% url 'properties:book' property.pk %}">Request booking</a>
+  {% endif %}
+
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item"><strong>Complement:</strong> {{ property.complement }}</li>
+      <li class="list-group-item"><strong>Landlord:</strong> {{ property.landlord }}</li>
+      <li class="list-group-item"><strong>Date Acquired:</strong> {{ property.date_acquired }}</li>
+      <li class="list-group-item"><strong>Utilities:</strong>
+        Internet {{ property.internet|yesno:"Yes,No" }},
+        Electricity {{ property.electricity|yesno:"Yes,No" }},
+        Gas {{ property.gas|yesno:"Yes,No" }},
+        Trash {{ property.trash|yesno:"Yes,No" }}
+      </li>
+      <li class="list-group-item"><strong>Date Released:</strong> {{ property.date_released }}</li>
+      <li class="list-group-item"><strong>Contract Length:</strong> {{ property.contract_length }} months</li>
+      <li class="list-group-item"><strong>Maintenance:</strong> {{ property.maintenance }}</li>
+      <li class="list-group-item"><strong>Rooms:</strong> {{ property.rooms }}</li>
+      <li class="list-group-item"><strong>Bathrooms:</strong> {{ property.bathrooms }}</li>
+      <li class="list-group-item"><strong>Type:</strong> {{ property.get_type_display|default:"—" }}</li>
+      <li class="list-group-item"><strong>Rent:</strong> {{ property.rent }}</li>
+    </ul>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container" style="max-width:760px; margin:2rem auto;">
+  <div class="card shadow-sm border-0">
+    <div class="card-header text-white" style="background:linear-gradient(135deg,#0d6efd,#6610f2);">
+      <div class="d-flex align-items-center justify-content-between">
+        <h4 class="mb-0">Request to book</h4>
+        <small class="opacity-75">{{ property }}</small>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.website }}
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label class="font-weight-semibold" for="{{ form.full_name.id_for_label }}">Full name</label>
+            {{ form.full_name }}
+            {{ form.full_name.errors }}
+          </div>
+          <div class="form-group col-md-6">
+            <label class="font-weight-semibold" for="{{ form.email.id_for_label }}">Email</label>
+            {{ form.email }}
+            {{ form.email.errors }}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label class="font-weight-semibold" for="{{ form.phone.id_for_label }}">Phone (optional)</label>
+            {{ form.phone }}
+            {{ form.phone.errors }}
+          </div>
+          <div class="form-group col-md-6">
+            <label class="font-weight-semibold" for="{{ form.start_date.id_for_label }}">Check-in date</label>
+            {{ form.start_date }}
+            {{ form.start_date.errors }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="font-weight-semibold" for="{{ form.notes.id_for_label }}">Additional notes (optional)</label>
+          {{ form.notes }}
+          {{ form.notes.errors }}
+        </div>
+
+        <div class="d-flex justify-content-between pt-2">
+          <a href="{% url 'properties:list' %}" class="btn btn-light">Cancel</a>
+          <button type="submit" class="btn btn-primary">Submit booking request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
