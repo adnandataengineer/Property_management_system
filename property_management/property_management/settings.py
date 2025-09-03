@@ -120,25 +120,30 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Don’t crash if a referenced file is missing from the manifest
+# --- Static (add this just after STATIC_ROOT) ---
+STATICFILES_DIRS = [BASE_DIR / "static"]  # this points at property_management/static/
 WHITENOISE_MANIFEST_STRICT = False
- 
-AWS_ACCESS_KEY_ID       = os.getenv("DO_SPACES_KEY")
-AWS_SECRET_ACCESS_KEY   = os.getenv("DO_SPACES_SECRET")
-AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME      = os.getenv("DO_SPACES_REGION")     # e.g. "nyc3"
-AWS_S3_ENDPOINT_URL     = os.getenv("DO_SPACES_ENDPOINT")   # e.g. "https://nyc3.digitaloceanspaces.com"
 
-if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, AWS_S3_REGION_NAME, AWS_S3_ENDPOINT_URL]):
-    raise RuntimeError("USE_S3=1 but one or more DO/AWS Spaces vars are missing")
+# --- Media / Spaces (make it optional) ---
+USE_S3 = os.getenv("USE_S3", "0") == "1"
 
-AWS_DEFAULT_ACL = "public-read"
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_REGION_NAME}.digitaloceanspaces.com"
+if USE_S3:
+    AWS_ACCESS_KEY_ID       = os.getenv("DO_SPACES_KEY")
+    AWS_SECRET_ACCESS_KEY   = os.getenv("DO_SPACES_SECRET")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME      = os.getenv("DO_SPACES_REGION")
+    AWS_S3_ENDPOINT_URL     = os.getenv("DO_SPACES_ENDPOINT")  # e.g. https://lon1.digitaloceanspaces.com
 
-STORAGES = {
-        "default": {  # media files to Spaces
+    if not all([AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, AWS_S3_REGION_NAME, AWS_S3_ENDPOINT_URL]):
+        raise RuntimeError("USE_S3=1 but one or more DO/AWS Spaces vars are missing")
+
+    AWS_DEFAULT_ACL = "public-read"
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
+    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_REGION_NAME}.digitaloceanspaces.com"
+
+    STORAGES = {
+        "default": {  # media to Spaces
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
             "OPTIONS": {"location": "media"},
         },
@@ -146,8 +151,19 @@ STORAGES = {
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
-
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+else:
+    STORAGES = {
+        "default": {  # media on filesystem
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+            "OPTIONS": {"location": str(BASE_DIR / "media")},
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
 # -----------------------------------------------------------------------------
 # Email (Gmail SMTP or provider via env)
