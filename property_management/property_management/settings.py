@@ -30,7 +30,7 @@ SECRET_KEY = os.getenv("SECRET_KEY") or ("dev-insecure-key" if not IS_PRODUCTION
 if IS_PRODUCTION and not SECRET_KEY:
     raise RuntimeError("SECRET_KEY is required in production")
 
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = os.getenv("DEBUG", "False" if IS_PRODUCTION else "True") == "True"
 
 ALLOWED_HOSTS = csv_env("ALLOWED_HOSTS", "127.0.0.1,localhost")
 CSRF_TRUSTED_ORIGINS = csv_env("CSRF_TRUSTED_ORIGINS", "")
@@ -82,7 +82,9 @@ WSGI_APPLICATION = "property_management.wsgi.application"
 # Database (DigitalOcean: set DATABASE_URL; local dev: sqlite fallback)
 # -----------------------------------------------------------------------------
 db_url = os.getenv("DATABASE_URL")
-if not db_url and not IS_PRODUCTION and os.getenv("USE_SQLITE", "1") == "1":
+use_sqlite = os.getenv("USE_SQLITE", "0") == "1"
+
+if use_sqlite or (not db_url and not IS_PRODUCTION):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -123,6 +125,8 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # --- Static (add this just after STATIC_ROOT) ---
 STATICFILES_DIRS = [BASE_DIR / "static"]  # this points at property_management/static/
 WHITENOISE_MANIFEST_STRICT = False
+if DEBUG:
+    WHITENOISE_USE_FINDERS = True
 
 # --- Media / Spaces (make it optional) ---
 USE_S3 = os.getenv("USE_S3", "0") == "1"

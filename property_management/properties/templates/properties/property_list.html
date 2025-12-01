@@ -4,7 +4,8 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h2>Available Properties and Beds</h2>
   <form class="form-inline" method="get">
-    <input class="form-control mr-2" type="search" name="q" placeholder="Search properties..." value="{{ request.GET.q }}">
+    <input class="form-control mr-2" type="search" name="q" placeholder="Search properties..."
+      value="{{ request.GET.q }}">
     <button class="btn btn-outline-primary" type="submit">Search</button>
   </form>
 </div>
@@ -21,14 +22,15 @@
         <div class="d-flex justify-content-between align-items-center">
           <h5 class="card-title mb-0">{{ p.street_number }} {{ p.street_name }}</h5>
           {% if p.is_available %}
-            <span class="badge bg-success">Available</span>
+          <span class="badge bg-success">Available</span>
           {% else %}
-            <span class="badge bg-secondary">Unavailable</span>
+          <span class="badge bg-secondary">Unavailable</span>
           {% endif %}
         </div>
         <p class="card-text"><strong>Type:</strong> {{ p.get_type_display|default:"—" }}</p>
         <p class="card-text"><strong>Rent:</strong> {{ p.rent }}</p>
-        <p class="card-text"><strong>Rooms:</strong> {{ p.rooms }}</p>
+        <p class="card-text"><strong>Available Rooms:</strong> {{ p.get_available_room_count }}</p>
+
         <a href="{% url 'properties:detail' p.pk %}" class="mt-auto btn btn-primary">View Details</a>
       </div>
     </div>
@@ -41,13 +43,18 @@
   {% if is_paginated %}
   <ul class="pagination justify-content-center">
     {% if page_obj.has_previous %}
-    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a></li>
+    <li class="page-item"><a class="page-link"
+        href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+    </li>
     {% else %}
     <li class="page-item disabled"><span class="page-link">Previous</span></li>
     {% endif %}
-    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+    <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages
+        }}</span></li>
     {% if page_obj.has_next %}
-    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a></li>
+    <li class="page-item"><a class="page-link"
+        href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+    </li>
     {% else %}
     <li class="page-item disabled"><span class="page-link">Next</span></li>
     {% endif %}

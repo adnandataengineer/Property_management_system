@@ -43,8 +43,8 @@ class BookingRequestForm(forms.ModelForm):
         fields = ["full_name", "email", "phone", "start_date", "notes"]  # end_date intentionally not exposed
 
     def __init__(self, *args, **kwargs):
-        # the view passes Property so we can run duplicate checks
-        self.property = kwargs.pop("property", None)
+        # the view passes Room so we can run duplicate checks
+        self.room = kwargs.pop("room", None)
         super().__init__(*args, **kwargs)
 
     def clean_full_name(self):
@@ -81,14 +81,14 @@ class BookingRequestForm(forms.ModelForm):
         if cleaned.get("website"):
             raise ValidationError("Form flagged as spam.")
 
-        # Prevent duplicate pending requests in last 24h for same property+email
-        prop = self.property
+        # Prevent duplicate pending requests in last 24h for same room+email
+        room = self.room
         email = cleaned.get("email")
-        if prop and email:
+        if room and email:
             from django.utils import timezone
             recent = timezone.now() - timedelta(hours=24)
             exists = BookingRequest.objects.filter(
-                property=prop,
+                room=room,
                 email__iexact=email,
                 status=BookingRequest.Status.PENDING,
                 created_at__gte=recent,
@@ -96,3 +96,4 @@ class BookingRequestForm(forms.ModelForm):
             if exists:
                 raise ValidationError("You’ve already submitted a request recently. We’ll be in touch soon.")
         return cleaned
+

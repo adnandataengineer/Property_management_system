@@ -5,17 +5,21 @@
   <div class="card shadow-sm border-0">
     <div class="card-header text-white" style="background:linear-gradient(135deg,#0d6efd,#6610f2);">
       <div class="d-flex align-items-center justify-content-between">
-        <h4 class="mb-0">Request to book</h4>
-        <small class="opacity-75">{{ property }}</small>
+        <div>
+          <h4 class="mb-0">Request to book</h4>
+          <p class="mb-0 small">{{ room.room_name }} ({{ room.get_room_type_display }})</p>
+        </div>
+        <small class="opacity-75">{{ property.street_number }} {{ property.street_name }}</small>
       </div>
     </div>
+
 
     <div class="card-body">
       <form method="post" novalidate>
         {% csrf_token %}
         {{ form.website }}
         {% if form.non_field_errors %}
-          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
         {% endif %}
 
         <div class="form-row">

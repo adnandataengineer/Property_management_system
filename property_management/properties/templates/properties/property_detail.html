@@ -5,75 +5,63 @@
 
 <div class="card mb-4">
   <!-- Carousel -->
-  <div id="propertyCarousel"
-       class="carousel slide carousel-fade stylish-carousel"
-       data-ride="carousel">
+  <div id="propertyCarousel" class="carousel slide carousel-fade stylish-carousel" data-ride="carousel">
 
     <!-- Indicators -->
     <ol class="carousel-indicators">
       {% for img in property.images.all %}
-        <li data-target="#propertyCarousel"
-            data-slide-to="{{ forloop.counter0 }}"
-            class="{% if forloop.first %}active{% endif %}"></li>
+      <li data-target="#propertyCarousel" data-slide-to="{{ forloop.counter0 }}"
+        class="{% if forloop.first %}active{% endif %}"></li>
       {% endfor %}
       {% if property.property_video %}
-        <li data-target="#propertyCarousel"
-            data-slide-to="{{ property.images.count }}"
-            class="{% if property.images.count == 0 %}active{% endif %}"></li>
+      <li data-target="#propertyCarousel" data-slide-to="{{ property.images.count }}"
+        class="{% if property.images.count == 0 %}active{% endif %}"></li>
       {% endif %}
     </ol>
 
     <!-- Slides -->
     <div class="carousel-inner">
       {% if property.images.count %}
-        {% for img in property.images.all %}
-          <div class="carousel-item{% if forloop.first %} active{% endif %}">
-            <img src="{{ img.image.url }}"
-                 class="d-block w-100"
-                 alt="{{ img.caption }}">
-            {% if img.caption %}
-              <div class="carousel-caption">
-                <p>{{ img.caption }}</p>
-              </div>
-            {% endif %}
-          </div>
-        {% endfor %}
-        {% if property.property_video %}
-          <div class="carousel-item">
-            <video class="d-block w-100" controls>
-              <source src="{{ property.property_video.url }}" type="video/mp4">
-              Your browser doesn’t support the video tag.
-            </video>
-          </div>
+      {% for img in property.images.all %}
+      <div class="carousel-item{% if forloop.first %} active{% endif %}">
+        <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ img.caption }}">
+        {% if img.caption %}
+        <div class="carousel-caption">
+          <p>{{ img.caption }}</p>
+        </div>
         {% endif %}
+      </div>
+      {% endfor %}
+      {% if property.property_video %}
+      <div class="carousel-item">
+        <video class="d-block w-100" controls>
+          <source src="{{ property.property_video.url }}" type="video/mp4">
+          Your browser doesn’t support the video tag.
+        </video>
+      </div>
+      {% endif %}
       {% else %}
-        {% if property.property_video %}
-          <div class="carousel-item active">
-            <video class="d-block w-100" controls>
-              <source src="{{ property.property_video.url }}" type="video/mp4">
-              Your browser doesn’t support the video tag.
-            </video>
-          </div>
-        {% else %}
-          <div class="carousel-item active">
-            <div class="text-center p-5 bg-light">No Media Available</div>
-          </div>
-        {% endif %}
+      {% if property.property_video %}
+      <div class="carousel-item active">
+        <video class="d-block w-100" controls>
+          <source src="{{ property.property_video.url }}" type="video/mp4">
+          Your browser doesn’t support the video tag.
+        </video>
+      </div>
+      {% else %}
+      <div class="carousel-item active">
+        <div class="text-center p-5 bg-light">No Media Available</div>
+      </div>
+      {% endif %}
       {% endif %}
     </div>
 
     <!-- Controls -->
-    <a class="carousel-control-prev"
-       href="#propertyCarousel"
-       role="button"
-       data-slide="prev">
+    <a class="carousel-control-prev" href="#propertyCarousel" role="button" data-slide="prev">
       <span class="carousel-control-prev-icon" aria-hidden="true"></span>
       <span class="sr-only">Previous</span>
     </a>
-    <a class="carousel-control-next"
-       href="#propertyCarousel"
-       role="button"
-       data-slide="next">
+    <a class="carousel-control-next" href="#propertyCarousel" role="button" data-slide="next">
       <span class="carousel-control-next-icon" aria-hidden="true"></span>
       <span class="sr-only">Next</span>
     </a>
@@ -82,38 +70,82 @@
   <!-- Property Details -->
   <div class="card-body mt-3">
 
-  <div class="d-flex justify-content-between align-items-center mb-2">
-    <h5 class="card-title mb-0">{{ property.street_number }} {{ property.street_name }}</h5>
-    {% if property.is_available %}
-      <span class="badge bg-success">Available</span>
-    {% else %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="card-title mb-0">{{ property.street_number }} {{ property.street_name }}</h5>
+      {% if property.is_available %}
+      <span class="badge bg-success">Active Property</span>
+      {% else %}
       <span class="badge bg-secondary">Unavailable</span>
-    {% endif %}
-  </div>
+      {% endif %}
+    </div>
 
-  {% if property.is_available %}
-    <a class="btn btn-success mb-3" href="{% url 'properties:book' property.pk %}">Request booking</a>
-  {% endif %}
-
-    <ul class="list-group list-group-flush">
+    <ul class="list-group list-group-flush mb-4">
       <li class="list-group-item"><strong>Complement:</strong> {{ property.complement }}</li>
       <li class="list-group-item"><strong>Landlord:</strong> {{ property.landlord }}</li>
-      <li class="list-group-item"><strong>Date Acquired:</strong> {{ property.date_acquired }}</li>
       <li class="list-group-item"><strong>Utilities:</strong>
         Internet {{ property.internet|yesno:"Yes,No" }},
         Electricity {{ property.electricity|yesno:"Yes,No" }},
         Gas {{ property.gas|yesno:"Yes,No" }},
-        Trash {{ property.trash|yesno:"Yes,No" }}
+        Trash {{ property.trash|yesno:"Yes,No" }},
+        Prepay {{ property.prepay|yesno:"Yes,No" }}
       </li>
-      <li class="list-group-item"><strong>Date Released:</strong> {{ property.date_released }}</li>
-      <li class="list-group-item"><strong>Contract Length:</strong> {{ property.contract_length }} months</li>
       <li class="list-group-item"><strong>Maintenance:</strong> {{ property.maintenance }}</li>
-      <li class="list-group-item"><strong>Rooms:</strong> {{ property.rooms }}</li>
       <li class="list-group-item"><strong>Bathrooms:</strong> {{ property.bathrooms }}</li>
-      <li class="list-group-item"><strong>Type:</strong> {{ property.get_type_display|default:"—" }}</li>
-      <li class="list-group-item"><strong>Rent:</strong> {{ property.rent }}</li>
     </ul>
+
+    <!-- Common Areas -->
+    {% if common_areas %}
+    <h4 class="mt-4 mb-3">Common Areas</h4>
+    <div class="row">
+      {% for area in common_areas %}
+      <div class="col-md-6 mb-3">
+        <div class="card h-100">
+          <div class="card-body">
+            <h5 class="card-title">{{ area.name }}</h5>
+            <p class="card-text">{{ area.description }}</p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Available Rooms -->
+    <h4 class="mt-4 mb-3">Available Rooms</h4>
+    {% if available_rooms %}
+    <div class="row">
+      {% for room in available_rooms %}
+      <div class="col-md-6 mb-4">
+        <div class="card h-100 border-primary">
+          <div class="card-header bg-transparent border-primary d-flex justify-content-between align-items-center">
+            <strong>{{ room.room_name }}</strong>
+            <span class="badge bg-primary">{{ room.get_room_type_display }}</span>
+          </div>
+          <div class="card-body">
+            {% if room.image %}
+            <img src="{{ room.image.url }}" class="img-fluid mb-3 rounded" alt="{{ room.room_name }}">
+            {% endif %}
+            <h5 class="card-title text-primary">
+              Rent: ${{ room.rent }} <small class="text-muted">/ month</small><br>
+              {% if room.bill_price > 0 %}
+              Bills Rent: ${{ room.bill_price }} <small class="text-muted">/ month</small>
+              {% endif %}
+            </h5>
+            <p class="card-text">{{ room.description }}</p>
+            {% if room.has_twin_beds %}
+            <p class="text-info"><i class="bi bi-layout-split"></i> Twin beds available</p>
+            {% endif %}
+            <a href="{% url 'properties:book' room.pk %}" class="btn btn-success w-100">Book this room</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning">No rooms currently available in this property.</div>
+    {% endif %}
   </div>
+
 
 </div>
 {% endblock %}

@@ -7,9 +7,7 @@ from django.urls import reverse
 from django.views.generic import ListView, DetailView
 
 from .forms import BookingRequestForm
-from .models import Property
-
-
+from .models import Property, Room
 
 class PropertyListView(ListView):
     model = Property
@@ -17,7 +15,11 @@ class PropertyListView(ListView):
     context_object_name = "properties"
 
     def get_queryset(self):
-        qs = Property.objects.filter(is_available=True)
+        # Show properties that have at least one available room
+        # or just show all properties? User said "interested person to only see the available vacancy"
+        # So maybe filter properties with available rooms?
+        # For now, let's keep it simple and show properties, but maybe annotate with available room count
+        qs = Property.objects.filter(is_available=True) # Property itself must be active
         q = self.request.GET.get("q")
         if q:
             qs = qs.filter(
@@ -37,19 +39,27 @@ class PropertyDetailView(DetailView):
         # 404 for unavailable properties
         return Property.objects.filter(is_available=True)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Add available rooms and common areas
+        context['available_rooms'] = self.object.property_rooms.filter(is_available=True)
+        context['common_areas'] = self.object.common_areas.all()
+        return context
+
 
 def booking_request_create(request, pk):
-    # Only allow booking if the property is available
-    prop = get_object_or_404(Property, pk=pk, is_available=True)
-    type_label = (prop.get_type_display() or "-") if hasattr(prop, "get_type_display") else (prop.type or "-")
-
+    # pk is now the ROOM pk
+    room = get_object_or_404(Room, pk=pk, is_available=True)
+    prop = room.property
+    
+    type_label = room.get_room_type_display()
 
     if request.method == "POST":
-        # pass 'property' for duplicate-check validation in the form
-        form = BookingRequestForm(request.POST, property=prop)
+        # pass 'room' for duplicate-check validation in the form
+        form = BookingRequestForm(request.POST, room=room)
         if form.is_valid():
             br = form.save(commit=False)
-            br.property = prop
+            br.room = room
             # UI collects only start_date; keep DB consistent
             br.end_date = br.start_date
             br.save()
@@ -63,11 +73,13 @@ def booking_request_create(request, pk):
                 admin_change_url = "(admin URL unavailable)"
 
             # --- Admin email (branded) ---
-            subject = f"New booking request — {prop}"
+            subject = f"New booking request — {room} at {prop}"
             text_message = (
                 "Smart Home Management System\n\n"
                 f"Property: {prop}\n"
+                f"Room: {room.room_name}\n"
                 f"Type: {type_label}\n"
+                f"Rent: {room.rent}\n"
                 f"Name: {br.full_name}\n"
                 f"Email: {br.email}\n"
                 f"Phone: {br.phone or '-'}\n"
@@ -82,7 +94,9 @@ def booking_request_create(request, pk):
               <p style="margin:0 0 16px;color:#555">You have a new booking request.</p>
               <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Property</strong></td><td style="padding:8px;border:1px solid #eee">{prop}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee"><strong>Room</strong></td><td style="padding:8px;border:1px solid #eee">{room.room_name}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Type</strong></td><td style="padding:8px;border:1px solid #eee">{type_label}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee"><strong>Rent</strong></td><td style="padding:8px;border:1px solid #eee">{room.rent}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Name</strong></td><td style="padding:8px;border:1px solid #eee">{br.full_name}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Email</strong></td><td style="padding:8px;border:1px solid #eee">{br.email}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Phone</strong></td><td style="padding:8px;border:1px solid #eee">{br.phone or '—'}</td></tr>
@@ -102,12 +116,14 @@ def booking_request_create(request, pk):
             )
 
             # --- Confirmation email to requester ---
-            user_subject = f"We received your booking request — {prop}"
+            user_subject = f"We received your booking request — {room}"
             user_text = (
                 "Smart Home Management System\n\n"
                 "Thanks for your request. Here are the details we received:\n\n"
                 f"Property: {prop}\n"
+                f"Room: {room.room_name}\n"
                 f"Type: {type_label}\n"
+                f"Rent: {room.rent}\n"
                 f"Name: {br.full_name}\n"
                 f"Email: {br.email}\n"
                 f"Phone: {br.phone or '-'}\n"
@@ -122,7 +138,9 @@ def booking_request_create(request, pk):
               <p style="margin:0 0 16px;color:#555">Thanks for your request. Here are the details we received:</p>
               <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Property</strong></td><td style="padding:8px;border:1px solid #eee">{prop}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee"><strong>Room</strong></td><td style="padding:8px;border:1px solid #eee">{room.room_name}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Type</strong></td><td style="padding:8px;border:1px solid #eee">{type_label}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee"><strong>Rent</strong></td><td style="padding:8px;border:1px solid #eee">{room.rent}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Name</strong></td><td style="padding:8px;border:1px solid #eee">{br.full_name}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Email</strong></td><td style="padding:8px;border:1px solid #eee">{br.email}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Phone</strong></td><td style="padding:8px;border:1px solid #eee">{br.phone or '—'}</td></tr>
@@ -144,7 +162,8 @@ def booking_request_create(request, pk):
             messages.success(request, "Thanks! Your booking request has been submitted.")
             return redirect("properties:detail", pk=prop.pk)
     else:
-        # pass 'property' on GET too (keeps the form consistent)
-        form = BookingRequestForm(property=prop)
+        # pass 'room' on GET too (keeps the form consistent)
+        form = BookingRequestForm(room=room)
 
-    return render(request, "properties/booking_form.html", {"form": form, "property": prop})
+    return render(request, "properties/booking_form.html", {"form": form, "property": prop, "room": room})
+
