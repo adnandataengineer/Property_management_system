@@ -9,3 +9,4 @@ dj-database-url
 django-storages
 boto3
 requests
+
