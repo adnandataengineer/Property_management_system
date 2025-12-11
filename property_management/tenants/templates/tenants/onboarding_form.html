@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tenant Onboarding - Contact Information</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max_width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        input[type="file"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            /* Ensures padding doesn't affect width */
+        }
+
+        .help-text {
+            display: block;
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .checkbox-group input {
+            margin-top: 5px;
+        }
+
+        .radio-group label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .btn-submit:hover {
+            background-color: #0056b3;
+        }
+
+        .error-list {
+            color: #dc3545;
+            list-style: none;
+            padding: 0;
+            font-size: 0.9em;
+        }
+
+        /* Signature Canvas */
+        #signature-pad {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: crosshair;
+            touch-action: none;
+            /* Prevent scrolling on mobile while drawing */
+            background: #fafafa;
+        }
+
+        .signature-container {
+            margin-bottom: 20px;
+        }
+
+        .clear-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Contact information</h1>
+        <p class="subtitle">Please provide your contact information below. This information will be used to create the
+            license agreement</p>
+
+        <form method="post" enctype="multipart/form-data" id="onboardingForm">
+            {% csrf_token %}
+
+            {% for field in form %}
+            {% if field.name != 'signature_data' %}
+            <div class="form-group">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                <div class="checkbox-group">
+                    {{ field }}
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                </div>
+                {% else %}
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }} {% if field.field.required %}*{% endif %}
+                </label>
+                {{ field }}
+                {% endif %}
+
+                {% if field.help_text %}
+                <span class="help-text">{{ field.help_text }}</span>
+                {% endif %}
+
+                {% if field.errors %}
+                <ul class="error-list">
+                    {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% else %}
+            {{ field }} <!-- Hidden signature input -->
+            {% endif %}
+            {% endfor %}
+
+            <!-- Agreement & Rules Section -->
+            {% if agreement %}
+            <div class="agreement-section"
+                style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 4px;">
+                <h3>{{ agreement.title }}</h3>
+
+                <div class="agreement-content"
+                    style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: #fff; border: 1px solid #eee;">
+                    <h4>Terms and Conditions</h4>
+                    {{ agreement.content|linebreaks }}
+                </div>
+
+                <div class="rules-content"
+                    style="max-height: 300px; overflow-y: auto; margin-bottom: 20px; padding: 10px; background: #fff; border: 1px solid #eee;">
+                    <h4>House Rules and Regulations</h4>
+                    {{ agreement.rules|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Signature Section -->
+            <div class="signature-container">
+                <label>Digital Signature *</label>
+                <canvas id="signature-pad" width="520" height="200"></canvas>
+                <button type="button" class="clear-btn" onclick="clearSignature()">Clear Signature</button>
+                <span class="help-text">Please sign in the box above.</span>
+            </div>
+
+            <button type="submit" class="btn-submit">Submit Information</button>
+        </form>
+    </div>
+
+    <script>
+        // Signature Pad Logic
+        const canvas = document.getElementById('signature-pad');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            // Handle both mouse and touch events
+            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            [lastX, lastY] = [x, y];
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            [lastX, lastY] = [e.clientX - rect.left, e.clientY - rect.top];
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            [lastX, lastY] = [touch.clientX - rect.left, touch.clientY - rect.top];
+            e.preventDefault(); // Prevent scrolling
+        });
+
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchmove', draw);
+
+        canvas.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mouseout', () => isDrawing = false);
+        canvas.addEventListener('touchend', () => isDrawing = false);
+
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('id_signature_data').value = '';
+        }
+
+        // On submit, put base64 image into hidden input
+        document.getElementById('onboardingForm').addEventListener('submit', function (e) {
+            const dataUrl = canvas.toDataURL();
+            // Check if canvas is empty (simple check: length of empty canvas data url)
+            // A 520x200 empty canvas dataURL is usually around ~2.8kb. 
+            // Better to check if user actually drew something or use a library, 
+            // but for now we trust the user or check if dataUrl is significantly different from empty.
+            document.getElementById('id_signature_data').value = dataUrl;
+        });
+    </script>
+
+</body>
+
+</html>

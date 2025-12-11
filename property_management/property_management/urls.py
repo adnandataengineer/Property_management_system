@@ -23,6 +23,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("properties/", include(("properties.urls", "properties"), namespace="properties")),
     path('tenants/', include('tenants.urls', namespace='tenants')),
+    path("finance/", include("finance.urls", namespace="finance")),
 ]
 
 if settings.DEBUG:

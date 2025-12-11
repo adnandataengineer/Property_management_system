@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import TenantListView, TenantDetailView
+from . import views
 
 app_name = 'tenants'
 
 urlpatterns = [
-    path('', TenantListView.as_view(), name='tenant_list'),
-    path('<int:pk>/', TenantDetailView.as_view(), name='tenant_detail'),
+    path('onboarding/<int:booking_id>/', views.tenant_onboarding, name='onboarding'),
+    # Fallback without ID if needed, though we prefer ID
+    path('onboarding/', views.tenant_onboarding, name='onboarding_no_id'),
 ]

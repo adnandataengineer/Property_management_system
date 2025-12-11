@@ -6,8 +6,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import ListView, DetailView
 
+from django.utils import timezone
 from .forms import BookingRequestForm
-from .models import Property, Room
+from .models import Property, Room, BookingRequest
 
 class PropertyListView(ListView):
     model = Property
@@ -166,4 +167,16 @@ def booking_request_create(request, pk):
         form = BookingRequestForm(room=room)
 
     return render(request, "properties/booking_form.html", {"form": form, "property": prop, "room": room})
+
+
+def sign_agreement(request, pk):
+    booking = get_object_or_404(BookingRequest, pk=pk)
+    
+    if request.method == "POST":
+        booking.signed_at = timezone.now()
+        booking.save()
+        messages.success(request, "Agreement signed successfully!")
+        return redirect("properties:detail", pk=booking.room.property.pk)
+        
+    return render(request, "properties/sign_agreement.html", {"booking": booking})
 

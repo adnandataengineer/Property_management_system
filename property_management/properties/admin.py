@@ -90,17 +90,93 @@ class PropertyAdmin(admin.ModelAdmin):
 @admin.register(BookingRequest)
 class BookingRequestAdmin(admin.ModelAdmin):
     list_display = (
-        "id", "room", "property", "full_name", "email",
-        "start_date", "end_date", "status", "created_at"
+        "id", "property", "full_name", "email",
+        "start_date", "end_date", "status", "agreement_sent", "onboarding_link"
     )
-    list_filter = ("status", "created_at")
-    search_fields = ("full_name", "email", "room__room_name", "room__property__street_name")
-    actions = ("approve_requests", "reject_requests")
+    list_filter = ("status", "created_at", "agreement_sent")
+    search_fields = ("full_name", "email", "property__street_name")
+    actions = ("approve_requests", "reject_requests", "generate_invoices")
 
-    @admin.display(description="Property")
-    def property(self, obj):
-        """Display the property through the room"""
-        return obj.property
+    readonly_fields = ("onboarding_link", "created_at", "updated_at")
+
+    @admin.display(description="Tenant Onboarding Link")
+    def onboarding_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        
+        if not obj.pk:
+            return "-"
+            
+        url = reverse("tenants:onboarding", args=[obj.pk])
+        # In production, use request.build_absolute_uri but here we don't have request easily in list_display unless we use a different approach.
+        # But for readonly field in detail view, we can just show the path or try to construct full URL if possible.
+        # Let's just show the path for now, or use a hardcoded domain if needed. 
+        # Actually, for admin, relative path is clickable.
+        return format_html('<a href="{}" target="_blank">Open Onboarding Form</a> (Share this link)', url)
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            # Check if status changed to APPROVED
+            old = BookingRequest.objects.get(pk=obj.pk)
+            if old.status != BookingRequest.Status.APPROVED and obj.status == BookingRequest.Status.APPROVED:
+                self._send_agreement_email(request, obj)
+        elif obj.status == BookingRequest.Status.APPROVED:
+            # New object created as APPROVED
+            self._send_agreement_email(request, obj)
+            
+        super().save_model(request, obj, form, change)
+
+    def _send_agreement_email(self, request, br, check_already_sent=True):
+        from django.core.mail import send_mail
+        from django.urls import reverse
+        
+        # Check if email was already sent (in database, not the form value)
+        if check_already_sent:
+            try:
+                old_br = BookingRequest.objects.get(pk=br.pk)
+                if old_br.agreement_sent:
+                    print(f"Email already sent for booking {br.pk}, skipping.")
+                    return
+            except BookingRequest.DoesNotExist:
+                # New object, proceed
+                pass
+
+        br.agreement_sent = True
+        # We don't save here because save_model will save, or the caller will save. 
+        # But for bulk actions we might need to save.
+        # Let's just set the flag. The caller should save.
+        # Actually save_model saves AFTER this. So modifying obj is fine.
+        
+        # Use the new Tenant Onboarding Form URL
+        agreement_url = request.build_absolute_uri(
+            reverse("tenants:onboarding", args=[br.pk])
+        )
+        
+        subject = f"Booking Approved! Please complete your onboarding — {br.property}"
+        message = (
+            f"Hi {br.full_name},\n\n"
+            "Good news! Your booking request has been approved.\n"
+            "Please click the link below to provide your details, upload your passport, and sign the agreement:\n\n"
+            f"{agreement_url}\n\n"
+            "Once submitted, we will generate your invoice.\n\n"
+            "Thanks,\nSmart Home Management"
+        )
+        print(f"Attempting to send email to {br.email}...")
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [br.email],
+                fail_silently=False
+            )
+            print("Email sent successfully.")
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+            self.message_user(request, f"Failed to send email: {e}", level=messages.ERROR)
+            return
+
+        self.message_user(request, f"Onboarding email sent to {br.email}", level=messages.SUCCESS)
 
     @admin.action(description="Approve selected requests")
     def approve_requests(self, request, queryset):
@@ -110,11 +186,11 @@ class BookingRequestAdmin(admin.ModelAdmin):
         for br in queryset.select_related("room", "room__property"):
             if br.status != BookingRequest.Status.APPROVED:
                 br.status = BookingRequest.Status.APPROVED
-                br.save(update_fields=["status", "updated_at"])
+                self._send_agreement_email(request, br)
+                br.save() # Save status and agreement_sent
                 updated += 1
 
-                # Mark the ROOM as unavailable (not the entire property)
-                if set_unavailable and br.room.is_available:
+                if set_unavailable and br.room and br.room.is_available:
                     room = br.room
                     room.is_available = False
                     room.save(update_fields=["is_available"])
@@ -127,6 +203,45 @@ class BookingRequestAdmin(admin.ModelAdmin):
             status=BookingRequest.Status.REJECTED, updated_at=timezone.now()
         )
         self.message_user(request, f"Rejected {updated} booking request(s).", level=messages.WARNING)
+
+    @admin.action(description="Generate invoices for signed bookings")
+    def generate_invoices(self, request, queryset):
+        from finance.utils import create_invoice_from_booking
+        
+        # Check if admin has Xero tokens
+        if not request.session.get("xero_tokens"):
+            self.message_user(
+                request, 
+                "You must connect to Xero first. Go to Finance Dashboard (/finance/) and click 'Connect to Xero'.",
+                level=messages.ERROR
+            )
+            return
+        
+        success_count = 0
+        failed_count = 0
+        
+        for br in queryset:
+            # Only generate invoices for approved and signed bookings
+            if br.status != BookingRequest.Status.APPROVED:
+                self.message_user(request, f"Booking {br.pk} is not approved, skipping.", level=messages.WARNING)
+                continue
+            
+            if not br.signed_at:
+                self.message_user(request, f"Booking {br.pk} is not signed yet, skipping.", level=messages.WARNING)
+                continue
+            
+            print(f"Generating invoice for booking {br.pk}...")
+            if create_invoice_from_booking(br, request):
+                success_count += 1
+                self.message_user(request, f"Invoice created for booking {br.pk} ({br.full_name})", level=messages.SUCCESS)
+            else:
+                failed_count += 1
+                self.message_user(request, f"Failed to create invoice for booking {br.pk}", level=messages.ERROR)
+        
+        if success_count > 0:
+            self.message_user(request, f"Successfully created {success_count} invoice(s).", level=messages.SUCCESS)
+        if failed_count > 0:
+            self.message_user(request, f"Failed to create {failed_count} invoice(s).", level=messages.ERROR)
 
 
 

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Sign Rental Agreement</h3>
+                </div>
+                <div class="card-body">
+                    {% if booking.signed_at %}
+                    <div class="alert alert-success">
+                        <h4>Agreement Signed!</h4>
+                        <p>You signed this agreement on {{ booking.signed_at|date:"F j, Y, g:i a" }}.</p>
+                    </div>
+                    <a href="{% url 'properties:detail' booking.room.property.pk %}" class="btn btn-primary">Back to
+                        Property</a>
+                    {% else %}
+                    <h5>Property: {{ booking.room.property }}</h5>
+                    <p><strong>Room:</strong> {{ booking.room.room_name }}</p>
+                    <p><strong>Dates:</strong> {{ booking.start_date }} to {{ booking.end_date }}</p>
+                    <p><strong>Rent:</strong> ${{ booking.room.rent }} / month</p>
+
+                    <hr>
+
+                    <div class="agreement-text p-3 bg-light border mb-3" style="height: 300px; overflow-y: scroll;">
+                        <h4>Rental Agreement Terms</h4>
+                        <p>This Rental Agreement is made between <strong>Home Sweet Home Management</strong> (Landlord)
+                            and <strong>{{ booking.full_name }}</strong> (Tenant).</p>
+                        <p>1. <strong>Premises:</strong> The Landlord agrees to rent to the Tenant the room located at
+                            {{ booking.room.property.street_number }} {{ booking.room.property.street_name }}, Room {{
+                            booking.room.room_name }}.</p>
+                        <p>2. <strong>Term:</strong> The lease term begins on {{ booking.start_date }} and ends on {{
+                            booking.end_date }}.</p>
+                        <p>3. <strong>Rent:</strong> The Tenant agrees to pay rent in the amount of ${{
+                            booking.room.rent }} per month.</p>
+                        <p>4. <strong>Utilities:</strong> Monthly bill payment of ${{ booking.room.bill_price }} is
+                            required.</p>
+                        <p>5. <strong>Rules:</strong> The Tenant agrees to abide by all property rules and regulations.
+                        </p>
+                        <p>By clicking "Sign Agreement" below, you acknowledge that you have read and agree to these
+                            terms.</p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="agreeCheck" required>
+                            <label class="form-check-label" for="agreeCheck">
+                                I have read and agree to the terms above.
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg w-100">Sign Agreement</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

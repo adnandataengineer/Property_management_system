@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Tenant
+from .models import Tenant, AgreementContent
+
+@admin.register(AgreementContent)
+class AgreementContentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'is_active', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('title', 'content', 'rules')
 
 @admin.register(Tenant)
 class TenantAdmin(admin.ModelAdmin):

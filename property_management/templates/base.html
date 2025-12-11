@@ -1,74 +1,55 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Grand Home Sweet Home Management</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grand Home Sweet Home Management</title>
 
-    <!-- Bootstrap CSS -->
-    <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    >
-    <!-- Your custom CSS -->
-    <link
-      rel="stylesheet"
-      href="{% static 'css/custom.css' %}"
-    >
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
 </head>
+
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-  <a class="navbar-brand" href="#">Grand Home Sweet Home Management</a>
-  <button
-    class="navbar-toggler"
-    type="button"
-    data-toggle="collapse"
-    data-target="#navbarNav"
-    aria-controls="navbarNav"
-    aria-expanded="false"
-    aria-label="Toggle navigation"
-  >
-    <span class="navbar-toggler-icon"></span>
-  </button>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Grand Home Sweet Home Management</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
 
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav mr-auto">
-      <li class="nav-item {% if request.path == '/properties/' %}active{% endif %}">
-        <a class="nav-link" href="{% url 'properties:list' %}">
-          Properties
-        </a>
-      </li>
-      <!-- <li class="nav-item {% if request.path == '/tenants/' %}active{% endif %}">
-        <a class="nav-link" href="{% url 'tenants:tenant_list' %}">
-          Tenants
-        </a>
-      </li> -->
-    </ul>
-  </div>
-</nav>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item {% if request.path == '/properties/' %}active{% endif %}">
+          <a class="nav-link" href="{% url 'properties:list' %}">
+            Properties
+          </a>
+        </li>
 
-<div class="container mt-4">
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
     {% if messages %}
     <div class="container" style="margin-top: 1rem;">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
       {% endfor %}
     </div>
-  {% endif %}
+    {% endif %}
     {% block content %}{% endblock %}
-</div>
+  </div>
 
-<!-- jQuery + Popper.js + Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script
-  src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
-  integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3gkGk605MfXp/E3o2xh/4FjF4FhJJ4n00T15"
-  crossorigin="anonymous"
-></script>
-<script
-  src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
-></script>
+  <!-- jQuery + Popper.js + Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3gkGk605MfXp/E3o2xh/4FjF4FhJJ4n00T15" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
+
 </html>

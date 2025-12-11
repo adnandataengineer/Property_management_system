@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "properties",
     "tenants",
+    "finance",
     "storages",  # harmless if S3 is off; required if S3 is on
 ]
 
@@ -176,15 +177,15 @@ EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.Email
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")                  # set in DO env
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")          # set in DO env (Gmail app password)
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "webmaster@localhost")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "homesweethome.pmanagement@gmail.com")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "hihu esxa jgzp tjlf")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
 SERVER_EMAIL = os.getenv("SERVER_EMAIL", DEFAULT_FROM_EMAIL)
 EMAIL_SUBJECT_PREFIX = os.getenv("EMAIL_SUBJECT_PREFIX", "[Smart Home Management] ")
 EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", 20))
 
 ADMINS = [
-    ("You", os.getenv("ADMIN_EMAIL", "muhammadadnan.py@gmail.com")),
+    ("Adnan", "homesweethome.pmanagement@gmail.com"),
 ]
 
 # -----------------------------------------------------------------------------

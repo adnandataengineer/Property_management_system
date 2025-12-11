@@ -208,6 +208,8 @@ class BookingRequest(models.Model):
         choices=Status.choices,
         default=Status.PENDING
     )
+    agreement_sent = models.BooleanField(default=False)
+    signed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

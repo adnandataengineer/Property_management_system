@@ -1,0 +1,8 @@
+{% extends "admin/base_site.html" %}
+
+{% block userlinks %}
+<a href="{% url 'finance:dashboard' %}"
+    style="color: #fff; background-color: #417690; padding: 5px 10px; border-radius: 4px; text-decoration: none; margin-right: 15px;">Connect
+    to Xero</a>
+{{ block.super }}
+{% endblock %}

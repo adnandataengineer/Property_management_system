@@ -1,0 +1,297 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .dashboard-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+        color: #333;
+    }
+
+    .dashboard-card h2 {
+        color: #2c3e50;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-connected {
+        background-color: #28a745;
+        box-shadow: 0 0 5px #28a745;
+    }
+
+    .status-disconnected {
+        background-color: #dc3545;
+        box-shadow: 0 0 5px #dc3545;
+    }
+
+    .btn-xero {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    .btn-connect {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-disconnect {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .transaction-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+    }
+
+    .transaction-table th,
+    .transaction-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        color: #333;
+        background-color: #fff;
+    }
+
+    .transaction-table th {
+        background-color: #e9ecef;
+        color: #495057;
+        font-weight: 800;
+    }
+
+    .filter-form {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        margin-bottom: 5px;
+        font-size: 0.9em;
+        color: #495057;
+        font-weight: 600;
+    }
+
+    .form-control {
+        padding: 8px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+    }
+
+    .btn-filter {
+        padding: 8px 16px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .settings-card {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        padding: 20px;
+    }
+
+    .settings-card h3 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .checkbox-group {
+        margin-bottom: 15px;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: #333;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        color: #212529;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <div class="dashboard-card">
+        <h2 style="margin-top: 0;">Xero Integration</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                {% if xero_connected %}
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <span class="status-indicator status-connected"></span>
+                    <span style="font-size: 1.2em; color: #28a745; font-weight: bold;">Connected</span>
+                </div>
+                <p style="margin: 0; color: #666;">Tenant ID: {{ tenant_id }}</p>
+                {% else %}
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <span class="status-indicator status-disconnected"></span>
+                    <span style="font-size: 1.2em; color: #dc3545; font-weight: bold;">Not Connected</span>
+                </div>
+                <p style="margin: 0; color: #666;">Connect your Xero account to sync financial data.</p>
+                {% endif %}
+            </div>
+            <div>
+                {% if xero_connected %}
+                <a href="{% url 'finance:xero_disconnect' %}" class="btn-xero btn-disconnect">Disconnect Xero</a>
+                {% else %}
+                <a href="{% url 'finance:xero_start' %}" class="btn-xero btn-connect">Connect to Xero</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-card">
+        <h3>Automation Settings</h3>
+        <form method="post" action="{% url 'finance:update_settings' %}">
+            {% csrf_token %}
+            <div class="checkbox-group">
+                <label>
+                    {% if settings.enable_monthly_invoices %}
+                    <input type="checkbox" name="enable_monthly_invoices" checked>
+                    {% else %}
+                    <input type="checkbox" name="enable_monthly_invoices">
+                    {% endif %}
+                    Enable Automatic Monthly Invoice Generation
+                </label>
+                <small style="display: block; margin-left: 26px; color: #666;">If enabled, invoices will be generated
+                    daily for tenants with matching move-in days.</small>
+            </div>
+            <div class="checkbox-group">
+                <label>
+                    {% if settings.enable_auto_reconciliation %}
+                    <input type="checkbox" name="enable_auto_reconciliation" checked>
+                    {% else %}
+                    <input type="checkbox" name="enable_auto_reconciliation">
+                    {% endif %}
+                    Enable Automatic Reconciliation
+                </label>
+                <small style="display: block; margin-left: 26px; color: #666;">If enabled, the reconciliation script
+                    will process bank lines.</small>
+            </div>
+            <button type="submit" class="btn-primary">Save Settings</button>
+        </form>
+        <hr style="margin: 20px 0;">
+        <h3>Manual Actions</h3>
+        <form method="post" action="{% url 'finance:run_reconciliation' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn-warning">Run Reconciliation Now</button>
+        </form>
+    </div>
+
+    {% if xero_connected %}
+    <div class="dashboard-card">
+        <h2 style="margin-top: 0; margin-bottom: 20px;">Bank Transactions</h2>
+        <form method="get" class="filter-form">
+            <div class="form-group">
+                <label for="start_date">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date"
+                    value="{{ start_date|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label for="end_date">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date|default:'' }}">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn-filter">Apply Filter</button>
+                <a href="{% url 'finance:dashboard' %}"
+                    style="padding: 8px 16px; color: #666; text-decoration: none;">Clear</a>
+            </div>
+        </form>
+        {% if transactions %}
+        <table class="transaction-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Contact</th>
+                    <th>Type</th>
+                    <th>Reference</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>{{ t.DateString|slice:":10" }}</td>
+                    <td>{{ t.Contact.Name|default:"-" }}</td>
+                    <td>{{ t.Type }}</td>
+                    <td>{{ t.Reference|default:"-" }}</td>
+                    {% if t.IsReconciled %}
+                    <td><span
+                            style="padding: 2px 6px; border-radius: 3px; font-size: 0.85em; background: #e8f5e9; color: #2e7d32;">Reconciled</span>
+                    </td>
+                    {% else %}
+                    <td><span
+                            style="padding: 2px 6px; border-radius: 3px; font-size: 0.85em; background: #fff3cd; color: #856404;">Pending</span>
+                    </td>
+                    {% endif %}
+                    <td style="font-weight: bold;">{{ t.Total }} {{ t.CurrencyCode }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #666;">
+            <p>No transactions found for the selected period.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

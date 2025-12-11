@@ -34,5 +34,36 @@ class Tenant(models.Model):
     license_fee     = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     deposit         = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
+    # New fields for onboarding workflow
+    emergency_contact_name = models.CharField(max_length=200, blank=True, null=True)
+    emergency_contact_phone = models.CharField(max_length=50, blank=True, null=True)
+    signature = models.TextField(blank=True, null=True, help_text="Base64 encoded signature image")
+    
+    booking_request = models.ForeignKey(
+        'properties.BookingRequest',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tenants',
+        help_text="Linked booking request"
+    )
+
     def __str__(self):
         return self.full_name or f"Tenant #{self.pk}"
+
+class AgreementContent(models.Model):
+    title = models.CharField(max_length=200, default="Standard Agreement")
+    content = models.TextField(help_text="Main agreement text")
+    rules = models.TextField(help_text="House rules and regulations")
+    is_active = models.BooleanField(default=False, help_text="Only one agreement should be active at a time")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            # Deactivate all others
+            AgreementContent.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} ({'Active' if self.is_active else 'Inactive'})"
