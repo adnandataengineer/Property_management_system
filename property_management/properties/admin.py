@@ -115,16 +115,41 @@ class BookingRequestAdmin(admin.ModelAdmin):
         return format_html('<a href="{}" target="_blank">Open Onboarding Form</a> (Share this link)', url)
 
     def save_model(self, request, obj, form, change):
+        is_newly_approved = False
         if change:
             # Check if status changed to APPROVED
             old = BookingRequest.objects.get(pk=obj.pk)
             if old.status != BookingRequest.Status.APPROVED and obj.status == BookingRequest.Status.APPROVED:
                 self._send_agreement_email(request, obj)
+                is_newly_approved = True
         elif obj.status == BookingRequest.Status.APPROVED:
             # New object created as APPROVED
             self._send_agreement_email(request, obj)
+            is_newly_approved = True
             
         super().save_model(request, obj, form, change)
+        
+        # Handle room and property availability when approved
+        if is_newly_approved:
+            set_unavailable = getattr(settings, "BOOKING_SETS_UNAVAILABLE_ON_APPROVAL", True)
+            if set_unavailable and obj.room and obj.room.is_available:
+                room = obj.room
+                room.is_available = False
+                room.save(update_fields=["is_available"])
+                
+                # Check if all rooms in the property are now booked
+                property_obj = room.property
+                available_room_count = property_obj.property_rooms.filter(is_available=True).count()
+                
+                if available_room_count == 0:
+                    # All rooms are booked, hide the property from public listing
+                    property_obj.is_available = False
+                    property_obj.save(update_fields=["is_available"])
+                    self.message_user(
+                        request, 
+                        f"Property '{property_obj}' has been hidden (all rooms booked).", 
+                        level=messages.INFO
+                    )
 
     def _send_agreement_email(self, request, br, check_already_sent=True):
         from django.core.mail import send_mail
@@ -194,6 +219,20 @@ class BookingRequestAdmin(admin.ModelAdmin):
                     room = br.room
                     room.is_available = False
                     room.save(update_fields=["is_available"])
+                    
+                    # Check if all rooms in the property are now booked
+                    property_obj = room.property
+                    available_room_count = property_obj.property_rooms.filter(is_available=True).count()
+                    
+                    if available_room_count == 0:
+                        # All rooms are booked, hide the property from public listing
+                        property_obj.is_available = False
+                        property_obj.save(update_fields=["is_available"])
+                        self.message_user(
+                            request, 
+                            f"Property '{property_obj}' has been hidden (all rooms booked).", 
+                            level=messages.INFO
+                        )
 
         self.message_user(request, f"Approved {updated} booking request(s).", level=messages.SUCCESS)
 
