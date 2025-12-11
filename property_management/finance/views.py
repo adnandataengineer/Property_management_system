@@ -35,8 +35,8 @@ def _redirect_uri(request) -> str:
 
     In local dev, Xero expects http://localhost (not 127.0.0.1/0.0.0.0).
     """
-    # FORCE localhost for Xero in development to match screenshot
-    return "http://localhost:8000/finance/xero/callback"
+    # Use environment variable for production, fallback to localhost for development
+    return os.getenv("XERO_REDIRECT_URI", "http://localhost:8000/finance/xero/callback")
 
 def _get_tenant_id(access_token: str) -> str:
     """Return first tenantId from /connections."""
