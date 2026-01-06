@@ -57,7 +57,9 @@ class TenantAdmin(admin.ModelAdmin):
     def display_signature(self, obj):
         if obj.signature:
             return format_html(
-                '<img src="{}" style="max-height: 200px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" />',
+                '<div style="display: inline-block; background-color: #333; padding: 10px; border-radius: 5px; border: 1px solid #666;">'
+                '<img src="{}" style="max-height: 200px; display: block;" />'
+                '</div>',
                 obj.signature
             )
         return "No signature"
