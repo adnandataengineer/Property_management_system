@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Tenant, AgreementContent
 
 @admin.register(AgreementContent)
@@ -28,3 +29,36 @@ class TenantAdmin(admin.ModelAdmin):
         'email',
         'property__street_name',
     )
+
+    readonly_fields = ('display_signature',)
+
+    fields = (
+        'property',
+        'notice_date',
+        'move_in_date',
+        'move_out_date',
+        'full_name',
+        'email',
+        'phone_number',
+        'pps_number',
+        'passport_upload',
+        'smoker',
+        'consent_personal_data',
+        'consent_share_data',
+        'current_income',
+        'license_fee',
+        'deposit',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'display_signature',
+        'booking_request',
+    )
+
+    def display_signature(self, obj):
+        if obj.signature:
+            return format_html(
+                '<img src="{}" style="max-height: 200px; background-color: #f0f0f0; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" />',
+                obj.signature
+            )
+        return "No signature"
+    display_signature.short_description = "Tenant Signature"
