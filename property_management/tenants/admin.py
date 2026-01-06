@@ -57,11 +57,17 @@ class TenantAdmin(admin.ModelAdmin):
     def display_signature(self, obj):
         if obj.signature:
             return format_html(
-                '<div style="display: inline-block; background-color: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">'
+                '<div style="display: inline-block; background-color: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 5px;">'
                 '<img src="{}" style="max-width: 520px; height: auto; display: block;" />'
                 '</div>'
-                '<br><span style="color: #888;">Data length: {} characters</span>',
+                '<br>'
+                '<a href="{}" download="signature_{}.png" style="background: #007bff; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px; font-size: 12px; margin-right: 10px;">Download PNG</a>'
+                '<span style="color: #666; font-size: 12px;">'
+                'Status: {} characters. (Real signatures are usually >10,000)'
+                '</span>',
                 obj.signature,
+                obj.signature,
+                obj.pk,
                 len(obj.signature)
             )
         return "No signature"
