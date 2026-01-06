@@ -57,10 +57,12 @@ class TenantAdmin(admin.ModelAdmin):
     def display_signature(self, obj):
         if obj.signature:
             return format_html(
-                '<div style="display: inline-block; background-color: #333; padding: 10px; border-radius: 5px; border: 1px solid #666;">'
-                '<img src="{}" style="max-height: 200px; display: block;" />'
-                '</div>',
-                obj.signature
+                '<div style="display: inline-block; background-color: white; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">'
+                '<img src="{}" style="max-width: 520px; height: auto; display: block;" />'
+                '</div>'
+                '<br><span style="color: #888;">Data length: {} characters</span>',
+                obj.signature,
+                len(obj.signature)
             )
         return "No signature"
     display_signature.short_description = "Tenant Signature"
