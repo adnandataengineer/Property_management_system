@@ -15,7 +15,7 @@
         }
 
         .container {
-            max_width: 600px;
+            max-width: 600px;
             margin: 0 auto;
             background: #fff;
             padding: 40px;
@@ -214,44 +214,57 @@
         let lastX = 0;
         let lastY = 0;
 
+        // Set stroke style explicitly
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+
+        function getPosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+            if (e.type.includes('touch')) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+            return [x, y];
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = getPosition(e);
+            if (e.type.includes('touch')) e.preventDefault();
+        }
+
         function draw(e) {
             if (!isDrawing) return;
-
-            // Handle both mouse and touch events
-            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-            const rect = canvas.getBoundingClientRect();
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
+            const [x, y] = getPosition(e);
 
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
             ctx.lineTo(x, y);
             ctx.stroke();
             [lastX, lastY] = [x, y];
+
+            if (e.type.includes('touch')) e.preventDefault();
         }
 
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            [lastX, lastY] = [e.clientX - rect.left, e.clientY - rect.top];
-        });
+        function stopDrawing() {
+            isDrawing = false;
+        }
 
-        canvas.addEventListener('touchstart', (e) => {
-            isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            [lastX, lastY] = [touch.clientX - rect.left, touch.clientY - rect.top];
-            e.preventDefault(); // Prevent scrolling
-        });
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
 
         canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchmove', draw, { passive: false });
 
-        canvas.addEventListener('mouseup', () => isDrawing = false);
-        canvas.addEventListener('mouseout', () => isDrawing = false);
-        canvas.addEventListener('touchend', () => isDrawing = false);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        canvas.addEventListener('touchend', stopDrawing);
 
         function clearSignature() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -260,11 +273,7 @@
 
         // On submit, put base64 image into hidden input
         document.getElementById('onboardingForm').addEventListener('submit', function (e) {
-            const dataUrl = canvas.toDataURL();
-            // Check if canvas is empty (simple check: length of empty canvas data url)
-            // A 520x200 empty canvas dataURL is usually around ~2.8kb. 
-            // Better to check if user actually drew something or use a library, 
-            // but for now we trust the user or check if dataUrl is significantly different from empty.
+            const dataUrl = canvas.toDataURL("image/png");
             document.getElementById('id_signature_data').value = dataUrl;
         });
     </script>
