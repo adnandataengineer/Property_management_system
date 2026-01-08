@@ -52,6 +52,7 @@ class TenantAdmin(admin.ModelAdmin):
         'emergency_contact_phone',
         'display_signature',
         'booking_request',
+        'payment_method',
     )
 
     def display_signature(self, obj):

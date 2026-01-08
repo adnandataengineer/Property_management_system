@@ -238,13 +238,20 @@ def create_invoice_for_tenant(tenant, invoice_date=None):
         "EmailAddress": tenant.email,
     }
     
+    # Determine status based on payment method
+    # If Cash, set to DRAFT so admin can manually approve when cash is received
+    # If Bank Transfer (default), set to AUTHORISED
+    xero_status = "AUTHORISED"
+    if hasattr(tenant, 'payment_method') and tenant.payment_method == 'cash':
+        xero_status = "DRAFT"
+
     invoice_data = {
         "Type": "ACCREC",
         "Contact": contact_data,
         "Date": str(invoice_date),
         "DueDate": str(invoice_date),
         "LineItems": line_items,
-        "Status": "AUTHORISED", # Recurring invoices usually authorised immediately? Or DRAFT. Let's use AUTHORISED as per user flow.
+        "Status": xero_status,
         "Reference": f"Rent {invoice_date.strftime('%b %Y')}"
     }
     

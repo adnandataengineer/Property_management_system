@@ -76,7 +76,7 @@ def booking_request_create(request, pk):
             # --- Admin email (branded) ---
             subject = f"New booking request — {room} at {prop}"
             text_message = (
-                "Smart Home Management System\n\n"
+                f"{settings.COMPANY_NAME}\n\n"
                 f"Property: {prop}\n"
                 f"Room: {room.room_name}\n"
                 f"Type: {type_label}\n"
@@ -91,7 +91,7 @@ def booking_request_create(request, pk):
             )
             html_message = f"""
             <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:640px">
-              <h2 style="margin:0 0 12px">Smart Home Management System</h2>
+              <h2 style="margin:0 0 12px">{settings.COMPANY_NAME}</h2>
               <p style="margin:0 0 16px;color:#555">You have a new booking request.</p>
               <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Property</strong></td><td style="padding:8px;border:1px solid #eee">{prop}</td></tr>
@@ -119,7 +119,7 @@ def booking_request_create(request, pk):
             # --- Confirmation email to requester ---
             user_subject = f"We received your booking request — {room}"
             user_text = (
-                "Smart Home Management System\n\n"
+                f"{settings.COMPANY_NAME}\n\n"
                 "Thanks for your request. Here are the details we received:\n\n"
                 f"Property: {prop}\n"
                 f"Room: {room.room_name}\n"
@@ -135,7 +135,7 @@ def booking_request_create(request, pk):
             )
             user_html = f"""
             <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:640px">
-              <h2 style="margin:0 0 12px">Smart Home Management System</h2>
+              <h2 style="margin:0 0 12px">{settings.COMPANY_NAME}</h2>
               <p style="margin:0 0 16px;color:#555">Thanks for your request. Here are the details we received:</p>
               <table style="border-collapse:collapse;width:100%;margin-bottom:16px">
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Property</strong></td><td style="padding:8px;border:1px solid #eee">{prop}</td></tr>

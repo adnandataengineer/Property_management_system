@@ -193,6 +193,7 @@ ADMINS = [
 # -----------------------------------------------------------------------------
 BOOKING_SETS_UNAVAILABLE_ON_APPROVAL = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+COMPANY_NAME = "Grand HSH Services"
 
 # -----------------------------------------------------------------------------
 # Security (safe defaults behind DO reverse proxy; enable via env if needed)

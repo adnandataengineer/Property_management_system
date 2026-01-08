@@ -39,6 +39,17 @@ class Tenant(models.Model):
     emergency_contact_phone = models.CharField(max_length=50, blank=True, null=True)
     signature = models.TextField(blank=True, null=True, help_text="Base64 encoded signature image")
     
+    PAYMENT_METHOD_CHOICES = [
+        ('bank', 'Bank Transfer'),
+        ('cash', 'Cash'),
+    ]
+    payment_method = models.CharField(
+        max_length=10, 
+        choices=PAYMENT_METHOD_CHOICES, 
+        default='bank',
+        help_text="If Cash is selected, invoices will be created as Draft in Xero for manual approval."
+    )
+    
     booking_request = models.ForeignKey(
         'properties.BookingRequest',
         on_delete=models.SET_NULL,
