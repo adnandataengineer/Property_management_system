@@ -35,14 +35,12 @@ def tenant_onboarding(request, booking_id=None):
             tenant = form.save(commit=False)
             if booking:
                 tenant.booking_request = booking
-                # Also link property from booking if not already set (though form doesn't set property FK directly yet)
                 if booking.room:
                     tenant.property = booking.room.property
-            
-            # If no booking/property linked, we might have an issue as Tenant.property is required.
-            # For now, if no booking, we might fail or need a fallback. 
-            # Assuming this flow ALWAYS starts from a booking link for now.
-            
+                    # Auto-fill deposit from rent
+                    tenant.deposit = booking.room.rent
+                    tenant.license_fee = booking.room.rent # Assuming license fee is also rent?
+
             # Update BookingRequest status
             if booking:
                 from django.utils import timezone
@@ -50,6 +48,60 @@ def tenant_onboarding(request, booking_id=None):
                 booking.save()
 
             tenant.save()
+
+            # --- Generate PDF Agreement ---
+            try:
+                from django.conf import settings
+                from django.template.loader import get_template
+                from xhtml2pdf import pisa
+                from django.core.files.base import ContentFile
+                from io import BytesIO
+
+                template_path = 'tenants/pdf/agreement_pdf.html'
+                context = {
+                    'tenant': tenant,
+                    'company_name': settings.COMPANY_NAME,
+                    'agreement': agreement,
+                }
+                template = get_template(template_path)
+                html = template.render(context)
+                result = BytesIO()
+                # Explicitly specify UTF-8 encoding for proper character rendering
+                pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result, encoding='UTF-8')
+                if not pdf.err:
+                    tenant.agreement_pdf.save(f"Agreement_{tenant.full_name}_{tenant.pk}.pdf", ContentFile(result.getvalue()))
+                    tenant.save()
+                    
+                    # --- Send Email with Attachment ---
+                    from django.core.mail import EmailMessage
+                    
+                    # Email to Tenant
+                    tenant_email = EmailMessage(
+                        subject=f"Your Signed Agreement - {settings.COMPANY_NAME}",
+                        body=f"Dear {tenant.full_name},\n\nPlease find attached your signed licensee agreement.\n\nBest regards,\n{settings.COMPANY_NAME}",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[tenant.email],
+                    )
+                    tenant_email.attach(tenant.agreement_pdf.name, tenant.agreement_pdf.read(), 'application/pdf')
+                    tenant_email.send()
+                    
+                    # Email to Admin
+                    admin_email = EmailMessage(
+                        subject=f"New Signed Agreement - {tenant.full_name}",
+                        body=f"A new agreement has been signed by {tenant.full_name}.\n\nSee attached PDF.",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=["homesweethome.pmanagement@gmail.com"], # Hardcoded as per request "admin"
+                    )
+                    # Reset pointer for re-reading if not using storage open/close logic carefully, 
+                    # but FileField.read() usually handles it or we use result.getvalue()
+                    tenant.agreement_pdf.seek(0)
+                    admin_email.attach(tenant.agreement_pdf.name, tenant.agreement_pdf.read(), 'application/pdf')
+                    admin_email.send()
+
+            except Exception as e:
+                print(f"Error generating PDF or sending email: {e}")
+                # Don't block success page if email fails, but log it.
+
             
             # Trigger Xero Invoice Generation
             if booking:

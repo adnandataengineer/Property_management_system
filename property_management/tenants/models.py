@@ -38,6 +38,7 @@ class Tenant(models.Model):
     emergency_contact_name = models.CharField(max_length=200, blank=True, null=True)
     emergency_contact_phone = models.CharField(max_length=50, blank=True, null=True)
     signature = models.TextField(blank=True, null=True, help_text="Base64 encoded signature image")
+    agreement_pdf = models.FileField(upload_to='agreements/', blank=True, null=True)
     
     PAYMENT_METHOD_CHOICES = [
         ('bank', 'Bank Transfer'),

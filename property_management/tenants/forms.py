@@ -22,6 +22,18 @@ class TenantOnboardingForm(forms.ModelForm):
         required=True,
         widget=forms.DateInput(attrs={'type': 'date'})
     )
+    move_out_date = forms.DateField(
+        label="Move out date",
+        required=True,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    current_income = forms.DecimalField(
+        label="Current Income",
+        required=True,
+        widget=forms.NumberInput(attrs={'placeholder': 'Enter your monthly income'})
+    )
+    # deposit removed as per user request (will be auto-filled from rent)
+
     passport_upload = forms.FileField(
         label="Passport Upload",
         required=True,
@@ -58,7 +70,8 @@ class TenantOnboardingForm(forms.ModelForm):
         model = Tenant
         fields = [
             'full_name', 'email', 'phone_number', 'pps_number', 
-            'move_in_date', 'passport_upload', 'smoker', 
+            'move_in_date', 'move_out_date', 'current_income',
+            'passport_upload', 'smoker', 'emergency_contact',
             'consent_personal_data', 'rules_regulations'
         ]
 

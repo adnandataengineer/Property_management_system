@@ -30,7 +30,7 @@ class TenantAdmin(admin.ModelAdmin):
         'property__street_name',
     )
 
-    readonly_fields = ('display_signature',)
+    readonly_fields = ('display_signature', 'download_agreement')
 
     fields = (
         'property',
@@ -50,10 +50,20 @@ class TenantAdmin(admin.ModelAdmin):
         'deposit',
         'emergency_contact_name',
         'emergency_contact_phone',
-        'display_signature',
-        'booking_request',
         'payment_method',
+        'booking_request',
+        'display_signature',
+        'download_agreement',
     )
+
+    def download_agreement(self, obj):
+        if obj.agreement_pdf:
+            return format_html(
+                '<a href="{}" download style="background: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px;">Download Agreement</a>',
+                obj.agreement_pdf.url
+            )
+        return "No Agreement Generated"
+    download_agreement.short_description = "Signed Agreement"
 
     def display_signature(self, obj):
         if obj.signature:

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+
+            @frame footer_frame {
+                /* Another static Frame */
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 2cm;
+                margin-right: 2cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 10pt;
+            /* Slightly smaller font to fit more */
+            line-height: 1.4;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            font-size: 16pt;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 12pt;
+            margin-top: 15px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+            margin-bottom: 10px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .details-table {
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+        }
+
+        .details-table td {
+            padding: 3px 5px;
+            /* Reduced padding */
+            vertical-align: top;
+        }
+
+        .label {
+            font-weight: bold;
+            width: 140px;
+        }
+
+        .signature-section {
+            margin-top: 30px;
+            page-break-inside: avoid;
+            /* Keep signatures together */
+        }
+
+        .signature-box {
+            border: 1px solid #ccc;
+            width: 250px;
+            height: 80px;
+            margin-top: 5px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 8pt;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="company-name">{{ company_name }}</div>
+        <div>Licensee Agreement</div>
+    </div>
+
+    <h2>Tenant Details</h2>
+    <table class="details-table">
+        <tr>
+            <td class="label">Full Name:</td>
+            <td>{{ tenant.full_name }}</td>
+        </tr>
+        <tr>
+            <td class="label">Email:</td>
+            <td>{{ tenant.email }}</td>
+        </tr>
+        <tr>
+            <td class="label">Phone:</td>
+            <td>{{ tenant.phone_number }}</td>
+        </tr>
+        <tr>
+            <td class="label">Property:</td>
+            <td>{{ tenant.property }}</td>
+        </tr>
+        <tr>
+            <td class="label">Move-in Date:</td>
+            <td>{{ tenant.move_in_date }}</td>
+        </tr>
+        <tr>
+            <td class="label">Move-out Date:</td>
+            <td>{{ tenant.move_out_date }}</td>
+        </tr>
+        <tr>
+            <td class="label">Rent/License Fee:</td>
+            <td>&euro;{{ tenant.license_fee }}</td>
+        </tr>
+        <tr>
+            <td class="label">Deposit:</td>
+            <td>&euro;{{ tenant.deposit }}</td>
+        </tr>
+    </table>
+
+    {% if agreement %}
+    <h2>Terms and Conditions</h2>
+    <div>
+        {{ agreement.content|linebreaks }}
+    </div>
+
+    <h2>House Rules</h2>
+    <div>
+        {{ agreement.rules|linebreaks }}
+    </div>
+    {% endif %}
+
+    <div class="signature-section">
+        <h2>Signatures</h2>
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 50%;">
+                    <p><strong>Licensee (Tenant):</strong></p>
+                    <p>Signed by: {{ tenant.full_name }}</p>
+                    <p>Date: {{ tenant.timestamp|date:"F j, Y" }}</p>
+                    {% if tenant.signature %}
+                    <img src="{{ tenant.signature }}" style="width: 250px; height: auto;" />
+                    {% else %}
+                    <div class="signature-box"></div>
+                    {% endif %}
+                </td>
+                <td style="width: 50%;">
+                    <p><strong>Licensor:</strong></p>
+                    <p>{{ company_name }}</p>
+                    <div style="margin-top: 50px; border-bottom: 1px solid black; width: 200px;"></div>
+                    <p>(Authorized Signature)</p>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="footerContent">
+        <div class="footer">
+            {{ company_name }} - Licensee Agreement - Page <pdf:pagenumber>
+        </div>
+    </div>
+</body>
+
+</html>
