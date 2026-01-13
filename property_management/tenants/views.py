@@ -27,7 +27,7 @@ def tenant_onboarding(request, booking_id=None):
              initial_data['property_address'] = str(booking.room.property)
 
     if request.method == 'POST':
-        form = TenantOnboardingForm(request.POST, request.FILES)
+        form = TenantOnboardingForm(request.POST, request.FILES, booking_id=booking_id, initial=initial_data)
         if form.is_valid():
             tenant = form.save(commit=False)
             if booking:
@@ -74,6 +74,7 @@ def tenant_onboarding(request, booking_id=None):
                     tenant.agreement_pdf.save(f"Agreement_{tenant.full_name}_{tenant.pk}.pdf", ContentFile(pdf_bytes))
                     tenant.save()
                     pdf_generated = True
+                    print(f"PDF generated successfully for tenant {tenant.pk}")
                 else:
                     print(f"PDF generation had errors for tenant {tenant.pk}")
                     
@@ -82,30 +83,12 @@ def tenant_onboarding(request, booking_id=None):
                 import traceback
                 traceback.print_exc()
 
-            # --- Send Email with Attachment (independent of PDF generation) ---
+            # --- Send Emails: Only send to tenant if PDF generated successfully ---
             try:
                 from django.core.mail import EmailMessage
                 from django.conf import settings
                 
-                # Email to Tenant
-                tenant_email = EmailMessage(
-                    subject=f"Your Signed Agreement - {settings.COMPANY_NAME}",
-                    body=f"Dear {tenant.full_name},\n\nThank you for completing your licensee agreement.\n\n" + 
-                         (f"Please find attached your signed agreement.\n\n" if pdf_generated else 
-                          f"Your agreement PDF will be available shortly in your tenant portal.\n\n") +
-                         f"Best regards,\n{settings.COMPANY_NAME}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[tenant.email],
-                )
-                
-                # Attach PDF if it was generated successfully
-                if pdf_generated and pdf_bytes:
-                    tenant_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
-                
-                tenant_email.send()
-                print(f"Tenant email sent successfully to {tenant.email}")
-                
-                # Email to Admin
+                # ALWAYS send email to Admin (for tracking, even if PDF fails)
                 admin_email = EmailMessage(
                     subject=f"New Signed Agreement - {tenant.full_name}",
                     body=f"A new agreement has been signed by {tenant.full_name}.\n\n" +
@@ -116,12 +99,29 @@ def tenant_onboarding(request, booking_id=None):
                     to=["homesweethome.pmanagement@gmail.com"],
                 )
                 
-                # Attach PDF for admin too
+                # Attach PDF for admin if generated
                 if pdf_generated and pdf_bytes:
                     admin_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
                     
                 admin_email.send()
                 print(f"Admin email sent successfully")
+
+                # ONLY send email to Tenant if PDF was generated successfully
+                if pdf_generated and pdf_bytes:
+                    tenant_email = EmailMessage(
+                        subject=f"Your Signed Agreement - {settings.COMPANY_NAME}",
+                        body=f"Dear {tenant.full_name},\n\nThank you for completing your licensee agreement.\n\n" + 
+                             f"Please find attached your signed agreement.\n\n" +
+                             f"Best regards,\n{settings.COMPANY_NAME}",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[tenant.email],
+                    )
+                    
+                    tenant_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
+                    tenant_email.send()
+                    print(f"Tenant email sent successfully to {tenant.email} with PDF attachment")
+                else:
+                    print(f"Skipping tenant email - PDF generation failed for tenant {tenant.pk}")
 
             except Exception as e:
                 print(f"Error sending emails for tenant {tenant.pk}: {e}")
@@ -143,7 +143,7 @@ def tenant_onboarding(request, booking_id=None):
             messages.success(request, "Thank you! Your information has been submitted successfully.")
             return render(request, 'tenants/success.html')
     else:
-        form = TenantOnboardingForm(initial=initial_data)
+        form = TenantOnboardingForm(initial=initial_data, booking_id=booking_id)
 
     return render(request, 'tenants/onboarding_form.html', {
         'form': form,

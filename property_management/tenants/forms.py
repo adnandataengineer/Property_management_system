@@ -75,6 +75,27 @@ class TenantOnboardingForm(forms.ModelForm):
             'consent_personal_data', 'rules_regulations'
         ]
 
+    def __init__(self, *args, **kwargs):
+        # Extract booking_id if passed
+        self.booking_id = kwargs.pop('booking_id', None)
+        super().__init__(*args, **kwargs)
+        
+        # If booking exists, make critical fields read-only to prevent tampering
+        if self.booking_id:
+            readonly_fields = ['full_name', 'email', 'move_in_date', 'property_address']
+            for field_name in readonly_fields:
+                if field_name in self.fields:
+                    # Make field disabled (won't be submitted but shown as read-only)
+                    self.fields[field_name].disabled = True
+                    # Add visual indicator
+                    if 'class' in self.fields[field_name].widget.attrs:
+                        self.fields[field_name].widget.attrs['class'] += ' readonly-field'
+                    else:
+                        self.fields[field_name].widget.attrs['class'] = 'readonly-field'
+                    # Add help text to explain why it's read-only
+                    if not self.fields[field_name].help_text:
+                        self.fields[field_name].help_text = 'This field is pre-filled from your booking request and cannot be modified.'
+
     def clean(self):
         cleaned_data = super().clean()
         # Custom validation if needed
