@@ -7,6 +7,7 @@ def tenant_onboarding(request, booking_id=None):
     """
     Public view for tenants to provide their details.
     If booking_id is provided, we pre-fill some info and link the tenant.
+    If booking_id is provided, we pre-fill some info and link the tenant.
     """
     from .models import AgreementContent
     agreement = AgreementContent.objects.filter(is_active=True).first()
@@ -22,6 +23,8 @@ def tenant_onboarding(request, booking_id=None):
             'email': booking.email,
             'phone_number': booking.phone,
             'move_in_date': booking.start_date,
+            # 'property_address': str(booking.room.property) if booking.room else '' 
+            # Note: property_address is a text field in form, we can pre-fill it.
         }
         if booking.room and booking.room.property:
              initial_data['property_address'] = str(booking.room.property)
@@ -36,7 +39,7 @@ def tenant_onboarding(request, booking_id=None):
                     tenant.property = booking.room.property
                     # Auto-fill deposit from rent
                     tenant.deposit = booking.room.rent
-                    tenant.license_fee = booking.room.rent
+                    tenant.license_fee = booking.room.rent # Assuming license fee is also rent?
 
             # Update BookingRequest status
             if booking:
@@ -47,9 +50,6 @@ def tenant_onboarding(request, booking_id=None):
             tenant.save()
 
             # --- Generate PDF Agreement ---
-            pdf_generated = False
-            pdf_bytes = None
-            
             try:
                 from django.conf import settings
                 from django.template.loader import get_template
@@ -68,66 +68,39 @@ def tenant_onboarding(request, booking_id=None):
                 result = BytesIO()
                 # Explicitly specify UTF-8 encoding for proper character rendering
                 pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result, encoding='UTF-8')
-                
                 if not pdf.err:
-                    pdf_bytes = result.getvalue()  # Store PDF bytes for email attachment
-                    tenant.agreement_pdf.save(f"Agreement_{tenant.full_name}_{tenant.pk}.pdf", ContentFile(pdf_bytes))
+                    tenant.agreement_pdf.save(f"Agreement_{tenant.full_name}_{tenant.pk}.pdf", ContentFile(result.getvalue()))
                     tenant.save()
-                    pdf_generated = True
-                else:
-                    print(f"PDF generation had errors for tenant {tenant.pk}")
                     
-            except Exception as e:
-                print(f"Error generating PDF for tenant {tenant.pk}: {e}")
-                import traceback
-                traceback.print_exc()
-
-            # --- Send Email with Attachment (independent of PDF generation) ---
-            try:
-                from django.core.mail import EmailMessage
-                from django.conf import settings
-                
-                # Email to Tenant
-                tenant_email = EmailMessage(
-                    subject=f"Your Signed Agreement - {settings.COMPANY_NAME}",
-                    body=f"Dear {tenant.full_name},\n\nThank you for completing your licensee agreement.\n\n" + 
-                         (f"Please find attached your signed agreement.\n\n" if pdf_generated else 
-                          f"Your agreement PDF will be available shortly in your tenant portal.\n\n") +
-                         f"Best regards,\n{settings.COMPANY_NAME}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[tenant.email],
-                )
-                
-                # Attach PDF if it was generated successfully
-                if pdf_generated and pdf_bytes:
-                    tenant_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
-                
-                tenant_email.send()
-                print(f"Tenant email sent successfully to {tenant.email}")
-                
-                # Email to Admin
-                admin_email = EmailMessage(
-                    subject=f"New Signed Agreement - {tenant.full_name}",
-                    body=f"A new agreement has been signed by {tenant.full_name}.\n\n" +
-                         f"Email: {tenant.email}\n" +
-                         f"Property: {tenant.property}\n" +
-                         (f"PDF attached.\n" if pdf_generated else f"PDF generation failed - check logs.\n"),
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=["homesweethome.pmanagement@gmail.com"],
-                )
-                
-                # Attach PDF for admin too
-                if pdf_generated and pdf_bytes:
-                    admin_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
+                    # --- Send Email with Attachment ---
+                    from django.core.mail import EmailMessage
                     
-                admin_email.send()
-                print(f"Admin email sent successfully")
+                    # Email to Tenant
+                    tenant_email = EmailMessage(
+                        subject=f"Your Signed Agreement - {settings.COMPANY_NAME}",
+                        body=f"Dear {tenant.full_name},\n\nPlease find attached your signed licensee agreement.\n\nBest regards,\n{settings.COMPANY_NAME}",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[tenant.email],
+                    )
+                    tenant_email.attach(tenant.agreement_pdf.name, tenant.agreement_pdf.read(), 'application/pdf')
+                    tenant_email.send()
+                    
+                    # Email to Admin
+                    admin_email = EmailMessage(
+                        subject=f"New Signed Agreement - {tenant.full_name}",
+                        body=f"A new agreement has been signed by {tenant.full_name}.\n\nSee attached PDF.",
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=["homesweethome.pmanagement@gmail.com"], # Hardcoded as per request "admin"
+                    )
+                    # Reset pointer for re-reading if not using storage open/close logic carefully, 
+                    # but FileField.read() usually handles it or we use result.getvalue()
+                    tenant.agreement_pdf.seek(0)
+                    admin_email.attach(tenant.agreement_pdf.name, tenant.agreement_pdf.read(), 'application/pdf')
+                    admin_email.send()
 
             except Exception as e:
-                print(f"Error sending emails for tenant {tenant.pk}: {e}")
-                import traceback
-                traceback.print_exc()
-                # Don't block success page if email fails, but log it clearly
+                print(f"Error generating PDF or sending email: {e}")
+                # Don't block success page if email fails, but log it.
 
             
             # Trigger Xero Invoice Generation
