@@ -7,5 +7,7 @@ whitenoise
 python-dotenv
 dj-database-url
 django-storages[boto3]
+boto3
 requests
+xhtml2pdf
 
