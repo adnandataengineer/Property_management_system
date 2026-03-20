@@ -37,6 +37,9 @@ def tenant_onboarding(request, booking_id=None):
                     # Auto-fill deposit from rent
                     tenant.deposit = booking.room.rent
                     tenant.license_fee = booking.room.rent
+                # Copy the admin-set move-out date from the booking
+                if booking.end_date:
+                    tenant.move_out_date = booking.end_date
 
             # Update BookingRequest status
             if booking:
@@ -101,6 +104,19 @@ def tenant_onboarding(request, booking_id=None):
                 # Attach PDF for admin if generated
                 if pdf_generated and pdf_bytes:
                     admin_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
+                
+                # Attach passport to admin email if uploaded
+                if tenant.passport_upload:
+                    try:
+                        passport_file = tenant.passport_upload
+                        passport_file.open('rb')
+                        passport_bytes = passport_file.read()
+                        passport_file.close()
+                        passport_name = passport_file.name.split('/')[-1]
+                        admin_email.attach(passport_name, passport_bytes, 'application/octet-stream')
+                        print(f"Passport attached to admin email for tenant {tenant.pk}")
+                    except Exception as pe:
+                        print(f"Could not attach passport for tenant {tenant.pk}: {pe}")
                     
                 admin_email.send()
                 print(f"Admin email sent successfully")
