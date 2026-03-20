@@ -126,9 +126,9 @@
             <img src="{{ room.image.url }}" class="img-fluid mb-3 rounded" alt="{{ room.room_name }}">
             {% endif %}
             <h5 class="card-title text-primary">
-              Rent: ${{ room.rent }} <small class="text-muted">/ month</small><br>
+              Rent: &euro;{{ room.rent }} <small class="text-muted">/ month</small><br>
               {% if room.bill_price > 0 %}
-              Bills Rent: ${{ room.bill_price }} <small class="text-muted">/ month</small>
+              Bills Rent: &euro;{{ room.bill_price }} <small class="text-muted">/ month</small>
               {% endif %}
             </h5>
             <p class="card-text">{{ room.description }}</p>

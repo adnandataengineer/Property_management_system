@@ -20,7 +20,7 @@
                     <h5>Property: {{ booking.room.property }}</h5>
                     <p><strong>Room:</strong> {{ booking.room.room_name }}</p>
                     <p><strong>Dates:</strong> {{ booking.start_date }} to {{ booking.end_date }}</p>
-                    <p><strong>Rent:</strong> ${{ booking.room.rent }} / month</p>
+                    <p><strong>Rent:</strong> &euro;{{ booking.room.rent }} / month</p>
 
                     <hr>
 
@@ -33,9 +33,9 @@
                             booking.room.room_name }}.</p>
                         <p>2. <strong>Term:</strong> The lease term begins on {{ booking.start_date }} and ends on {{
                             booking.end_date }}.</p>
-                        <p>3. <strong>Rent:</strong> The Tenant agrees to pay rent in the amount of ${{
+                        <p>3. <strong>Rent:</strong> The Tenant agrees to pay rent in the amount of &euro;{{
                             booking.room.rent }} per month.</p>
-                        <p>4. <strong>Utilities:</strong> Monthly bill payment of ${{ booking.room.bill_price }} is
+                        <p>4. <strong>Utilities:</strong> Monthly bill payment of &euro;{{ booking.room.bill_price }} is
                             required.</p>
                         <p>5. <strong>Rules:</strong> The Tenant agrees to abide by all property rules and regulations.
                         </p>

@@ -56,7 +56,6 @@ def tenant_onboarding(request, booking_id=None):
                 from xhtml2pdf import pisa
                 from django.core.files.base import ContentFile
                 from io import BytesIO
-
                 template_path = 'tenants/pdf/agreement_pdf.html'
                 context = {
                     'tenant': tenant,
