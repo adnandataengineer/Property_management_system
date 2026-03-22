@@ -22,6 +22,11 @@ class TenantOnboardingForm(forms.ModelForm):
         required=True,
         widget=forms.DateInput(attrs={'type': 'date'})
     )
+    move_out_date = forms.DateField(
+        label="Move out date",
+        required=True,
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
     current_income = forms.DecimalField(
         label="Current Income",
         required=True,
@@ -65,7 +70,7 @@ class TenantOnboardingForm(forms.ModelForm):
         model = Tenant
         fields = [
             'full_name', 'email', 'phone_number', 'pps_number', 
-            'move_in_date', 'current_income',
+            'move_in_date', 'move_out_date', 'current_income',
             'passport_upload', 'smoker', 'emergency_contact',
             'consent_personal_data', 'rules_regulations'
         ]
@@ -77,7 +82,7 @@ class TenantOnboardingForm(forms.ModelForm):
         
         # If booking exists, make critical fields read-only to prevent tampering
         if self.booking_id:
-            readonly_fields = ['full_name', 'email', 'move_in_date', 'property_address']
+            readonly_fields = ['full_name', 'email', 'move_in_date', 'move_out_date', 'property_address']
             for field_name in readonly_fields:
                 if field_name in self.fields:
                     # Make field disabled (won't be submitted but shown as read-only)

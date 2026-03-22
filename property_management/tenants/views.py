@@ -69,6 +69,7 @@ def tenant_onboarding(request, booking_id=None):
             'email': booking.email,
             'phone_number': booking.phone,
             'move_in_date': booking.start_date,
+            'move_out_date': booking.end_date,
         }
         if booking.room and booking.room.property:
              initial_data['property_address'] = str(booking.room.property)
