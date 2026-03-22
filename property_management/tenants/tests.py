@@ -63,9 +63,12 @@ class TenantOnboardingTests(TestCase):
             # File upload needs to be handled separately in the post
         }
 
+    @patch('tenants.views.merge_passport_into_pdf')
     @patch('xhtml2pdf.pisa.pisaDocument')
-    def test_successful_onboarding_sends_emails(self, mock_pisa):
+    def test_successful_onboarding_sends_emails(self, mock_pisa, mock_merge):
         """Test that successful PDF generation sends emails to both Tenant and Admin"""
+        mock_merge.side_effect = lambda b, upload: b
+        
         # Mock successful PDF generation
         def pisa_side_effect(src, dest, encoding='UTF-8'):
             dest.write(b"dummy pdf content")
@@ -100,7 +103,7 @@ class TenantOnboardingTests(TestCase):
         self.assertIn(f"Your Signed Agreement - {settings.COMPANY_NAME}", subjects)
         
         # Verify attachments
-        # Both emails should have attachments
+        # Both admin and tenant emails should have exactly 1 attachment (the merged PDF)
         self.assertEqual(len(mail.outbox[0].attachments), 1)
         self.assertEqual(len(mail.outbox[1].attachments), 1)
         

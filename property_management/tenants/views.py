@@ -3,6 +3,53 @@ from django.contrib import messages
 from .forms import TenantOnboardingForm
 from properties.models import BookingRequest
 
+def merge_passport_into_pdf(pdf_bytes, passport_upload):
+    import io
+    from pypdf import PdfReader, PdfWriter
+    from PIL import Image
+
+    merger = PdfWriter()
+    
+    # Add the main agreement
+    agreement_reader = PdfReader(io.BytesIO(pdf_bytes))
+    for page in agreement_reader.pages:
+        merger.add_page(page)
+        
+    # Process the passport
+    try:
+        passport_upload.open('rb')
+        passport_bytes = passport_upload.read()
+        passport_upload.close()
+        
+        # Check if it's a PDF
+        if passport_upload.name.lower().endswith('.pdf') or getattr(passport_upload, 'content_type', '') == 'application/pdf':
+            passport_reader = PdfReader(io.BytesIO(passport_bytes))
+            for page in passport_reader.pages:
+                merger.add_page(page)
+        else:
+            # Assume it's an image
+            img = Image.open(io.BytesIO(passport_bytes))
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img_pdf_bytes = io.BytesIO()
+            img.save(img_pdf_bytes, format='PDF')
+            img_pdf_bytes.seek(0)
+            
+            passport_reader = PdfReader(img_pdf_bytes)
+            for page in passport_reader.pages:
+                merger.add_page(page)
+                
+    except Exception as e:
+        print(f"Error merging passport: {e}")
+        import traceback
+        traceback.print_exc()
+        return pdf_bytes  # Fallback to original
+        
+    output = io.BytesIO()
+    merger.write(output)
+    return output.getvalue()
+
+
 def tenant_onboarding(request, booking_id=None):
     """
     Public view for tenants to provide their details.
@@ -73,6 +120,8 @@ def tenant_onboarding(request, booking_id=None):
                 
                 if not pdf.err:
                     pdf_bytes = result.getvalue()  # Store PDF bytes for email attachment
+                    if tenant.passport_upload:
+                        pdf_bytes = merge_passport_into_pdf(pdf_bytes, tenant.passport_upload)
                     tenant.agreement_pdf.save(f"Agreement_{tenant.full_name}_{tenant.pk}.pdf", ContentFile(pdf_bytes))
                     tenant.save()
                     pdf_generated = True
@@ -104,19 +153,6 @@ def tenant_onboarding(request, booking_id=None):
                 # Attach PDF for admin if generated
                 if pdf_generated and pdf_bytes:
                     admin_email.attach(f"Agreement_{tenant.full_name}.pdf", pdf_bytes, 'application/pdf')
-                
-                # Attach passport to admin email if uploaded
-                if tenant.passport_upload:
-                    try:
-                        passport_file = tenant.passport_upload
-                        passport_file.open('rb')
-                        passport_bytes = passport_file.read()
-                        passport_file.close()
-                        passport_name = passport_file.name.split('/')[-1]
-                        admin_email.attach(passport_name, passport_bytes, 'application/octet-stream')
-                        print(f"Passport attached to admin email for tenant {tenant.pk}")
-                    except Exception as pe:
-                        print(f"Could not attach passport for tenant {tenant.pk}: {pe}")
                     
                 admin_email.send()
                 print(f"Admin email sent successfully")

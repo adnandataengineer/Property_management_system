@@ -10,4 +10,4 @@ django-storages
 boto3
 requests
 xhtml2pdf
-
+pypdf
