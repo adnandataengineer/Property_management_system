@@ -146,3 +146,28 @@ class TenantOnboardingTests(TestCase):
         
         # Verify NO attachment
         self.assertEqual(len(email.attachments), 0)
+
+
+class SmokerFieldTests(TestCase):
+    """The smoker radio must save a real boolean, not the truthy string 'False'."""
+
+    def _field(self):
+        from tenants.forms import TenantOnboardingForm
+        return TenantOnboardingForm().fields['smoker']
+
+    def test_no_coerces_to_false(self):
+        self.assertIs(self._field().clean('False'), False)
+
+    def test_yes_coerces_to_true(self):
+        self.assertIs(self._field().clean('True'), True)
+
+
+class OnboardingGuardTests(TestCase):
+    """Onboarding without a resolvable property must not 500."""
+
+    def test_no_id_route_does_not_crash(self):
+        from django.test import Client
+        from django.urls import reverse
+        # Hitting the no-booking onboarding route should render, not error.
+        resp = Client().get(reverse('tenants:onboarding_no_id'))
+        self.assertEqual(resp.status_code, 200)

@@ -24,7 +24,7 @@ class TenantOnboardingForm(forms.ModelForm):
     )
     move_out_date = forms.DateField(
         label="Move out date",
-        required=True,
+        required=False,  # set by the licensor (admin); may be blank at onboarding
         widget=forms.DateInput(attrs={'type': 'date'})
     )
     current_income = forms.DecimalField(
@@ -39,9 +39,10 @@ class TenantOnboardingForm(forms.ModelForm):
         required=True,
         help_text="Upload 1 supported file: PDF, document or image. Max 100 MB."
     )
-    smoker = forms.ChoiceField(
+    smoker = forms.TypedChoiceField(
         label="Are you a smoker?",
-        choices=[(True, 'Yes'), (False, 'No')],
+        choices=[('True', 'Yes'), ('False', 'No')],
+        coerce=lambda v: v == 'True',   # store a real bool, not the truthy string "False"
         widget=forms.RadioSelect,
         required=True
     )

@@ -61,9 +61,13 @@ def booking_request_create(request, pk):
         if form.is_valid():
             br = form.save(commit=False)
             br.room = room
-            # UI collects only start_date; keep DB consistent
-            br.end_date = br.start_date
+            # UI collects only the check-in date. Leave end_date (move-out) empty
+            # for the licensor to set in the admin — don't default it to start_date.
             br.save()
+
+            # Pre-compute newline->br outside f-strings (backslashes in f-string
+            # expressions aren't allowed before Python 3.12).
+            notes_html = (br.notes or "").replace("\n", "<br>")
 
             # Admin deep link
             try:
@@ -102,7 +106,7 @@ def booking_request_create(request, pk):
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Email</strong></td><td style="padding:8px;border:1px solid #eee">{br.email}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Phone</strong></td><td style="padding:8px;border:1px solid #eee">{br.phone or '—'}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Check-in</strong></td><td style="padding:8px;border:1px solid #eee">{br.start_date}</td></tr>
-                <tr><td style="padding:8px;border:1px solid #eee"><strong>Notes</strong></td><td style="padding:8px;border:1px solid #eee">{(br.notes or '').replace('\n','<br>')}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee"><strong>Notes</strong></td><td style="padding:8px;border:1px solid #eee">{notes_html}</td></tr>
               </table>
               <p style="margin:0 0 8px">
                 <a href="{admin_change_url}" style="background:#0d6efd;color:#fff;padding:10px 14px;border-radius:6px;text-decoration:none">Open in Admin</a>
@@ -146,7 +150,7 @@ def booking_request_create(request, pk):
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Email</strong></td><td style="padding:8px;border:1px solid #eee">{br.email}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Phone</strong></td><td style="padding:8px;border:1px solid #eee">{br.phone or '—'}</td></tr>
                 <tr><td style="padding:8px;border:1px solid #eee"><strong>Check-in</strong></td><td style="padding:8px;border:1px solid #eee">{br.start_date}</td></tr>
-                <tr><td style="padding:8px;border:1px solid #eee"><strong>Notes</strong></td><td style="padding:8px;border:1px solid #eee">{(br.notes or '').replace('\n','<br>')}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #eee"><strong>Notes</strong></td><td style="padding:8px;border:1px solid #eee">{notes_html}</td></tr>
               </table>
               <p style="margin:0;color:#666">We’ll email you when it’s approved or if we need more info.</p>
             </div>

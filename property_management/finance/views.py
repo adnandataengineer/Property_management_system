@@ -14,9 +14,15 @@ from django.contrib.admin.views.decorators import staff_member_required
 
 
 # ── Config ──────────────────────────────────────────────────────────────────
-# ── Config ──────────────────────────────────────────────────────────────────
-XERO_CLIENT_ID     = os.getenv("XERO_CLIENT_ID", "BA876AF8A04143FFBDACDC4E5F1F1871")
-XERO_CLIENT_SECRET = os.getenv("XERO_CLIENT_SECRET", "qtWY4aERlqupzG5EFBTTdR9vSMgwLHzcxfTBnEXwAXpc8CRg")
+# Client credentials and the token-refresh logic live in one place: xero_client.
+from .xero_client import (
+    XERO_CLIENT_ID,
+    XERO_CLIENT_SECRET,
+    TOKEN_URL,
+    get_valid_db_token,
+    headers_for,
+)
+
 # Include offline_access if you want refresh tokens; remove if you truly don't need it
 XERO_SCOPES = os.getenv(
     "XERO_SCOPES",
@@ -24,7 +30,6 @@ XERO_SCOPES = os.getenv(
 )
 
 AUTH_URL  = "https://login.xero.com/identity/connect/authorize"
-TOKEN_URL = "https://identity.xero.com/connect/token"
 CONNECTIONS_URL = "https://api.xero.com/connections"
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -52,7 +57,17 @@ def _get_tenant_id(access_token: str) -> str:
     return data[0]["tenantId"]
 
 def _auth_headers(request) -> dict:
-    """Headers required by Accounting API (token + xero-tenant-id)."""
+    """
+    Headers required by the Accounting API (token + xero-tenant-id).
+
+    Prefers the stored DB token, auto-refreshing it when expired, so the
+    dashboard keeps working beyond the 30-minute access-token lifetime. Falls
+    back to the raw session token only if no DB token exists.
+    """
+    token = get_valid_db_token()
+    if token:
+        return headers_for(token)
+
     tokens = request.session.get("xero_tokens") or {}
     tenant_id = request.session.get("xero_tenant_id") or ""
     return {

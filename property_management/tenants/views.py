@@ -77,20 +77,32 @@ def tenant_onboarding(request, booking_id=None):
     if request.method == 'POST':
         form = TenantOnboardingForm(request.POST, request.FILES, booking_id=booking_id, initial=initial_data)
         if form.is_valid():
+            # A tenant must be linked to a property (non-null FK). Resolve it from
+            # the booking; if we can't, show an error instead of a 500 IntegrityError.
+            resolved_property = booking.room.property if (booking and booking.room) else None
+            if resolved_property is None:
+                messages.error(
+                    request,
+                    "We couldn't link your onboarding to a property. Please use the "
+                    "link from your approval email, or contact us for help."
+                )
+                return render(request, 'tenants/onboarding_form.html', {
+                    'form': form,
+                    'agreement': agreement,
+                })
+
             tenant = form.save(commit=False)
+            tenant.property = resolved_property
             if booking:
                 tenant.booking_request = booking
-                if booking.room:
-                    tenant.property = booking.room.property
-                    # Auto-fill deposit from rent
-                    tenant.deposit = booking.room.rent
-                    tenant.license_fee = booking.room.rent
-                # Copy the admin-set move-out date from the booking
+                # Auto-fill deposit/licence fee from rent
+                tenant.deposit = booking.room.rent
+                tenant.license_fee = booking.room.rent
+                # Copy the admin-set move-out date from the booking, if set
                 if booking.end_date:
                     tenant.move_out_date = booking.end_date
 
-            # Update BookingRequest status
-            if booking:
+                # Update BookingRequest status
                 from django.utils import timezone
                 booking.signed_at = timezone.now()
                 booking.save()

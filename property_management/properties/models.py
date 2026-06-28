@@ -201,7 +201,9 @@ class BookingRequest(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=50, blank=True)
     start_date = models.DateField()
-    end_date = models.DateField()
+    # Move-out date is set by the licensor (admin), not the public booking form,
+    # so it may be empty until they fill it in.
+    end_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True, max_length=500)
     status = models.CharField(
         max_length=10,

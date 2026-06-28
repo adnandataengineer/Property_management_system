@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+
+            @frame footer_frame {
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 2cm;
+                margin-right: 2cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+        }
+
+        .header {
+            margin-bottom: 20px;
+        }
+
+        .company-name {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .doc-title {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: right;
+            color: #2c3e50;
+        }
+
+        .meta-table,
+        .details-table,
+        .lines-table,
+        .bank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+
+        .meta-table td {
+            padding: 2px 5px;
+            vertical-align: top;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 12pt;
+            margin-top: 15px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+            margin-bottom: 10px;
+        }
+
+        .label {
+            font-weight: bold;
+            width: 150px;
+        }
+
+        .lines-table th {
+            background-color: #2c3e50;
+            color: #ffffff;
+            text-align: left;
+            padding: 6px 8px;
+            font-size: 10pt;
+        }
+
+        .lines-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .amount {
+            text-align: right;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            font-size: 11pt;
+            border-top: 2px solid #2c3e50;
+        }
+
+        .bank-table td {
+            padding: 4px 6px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        .bank-box {
+            border: 1px solid #2c3e50;
+            padding: 10px;
+            background-color: #f7f9fb;
+        }
+
+        .note {
+            font-size: 9pt;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 8pt;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+
+<body>
+    <table class="header">
+        <tr>
+            <td><div class="company-name">{{ company_name }}</div></td>
+            <td><div class="doc-title">INVOICE</div></td>
+        </tr>
+    </table>
+
+    <table class="meta-table">
+        <tr>
+            <td class="label">Invoice Reference:</td>
+            <td>{{ invoice_reference }}</td>
+            <td class="label">Invoice Date:</td>
+            <td>{{ invoice_date }}</td>
+        </tr>
+        <tr>
+            <td class="label">Billed To:</td>
+            <td>{{ full_name }}</td>
+            <td class="label">Payment Due:</td>
+            <td><strong>{{ due_date }}</strong></td>
+        </tr>
+        <tr>
+            <td class="label">Email:</td>
+            <td>{{ email }}</td>
+            <td class="label">Property:</td>
+            <td>{{ property_address }}</td>
+        </tr>
+        <tr>
+            <td class="label">Room:</td>
+            <td>{{ room_name }}</td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
+
+    <h2>Charges</h2>
+    <table class="lines-table">
+        <tr>
+            <th>Description</th>
+            <th class="amount">Amount</th>
+        </tr>
+        {% for item in line_items %}
+        <tr>
+            <td>{{ item.description }}</td>
+            <td class="amount">&euro;{{ item.amount }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td>Total Due</td>
+            <td class="amount">&euro;{{ total }}</td>
+        </tr>
+    </table>
+
+    <h2>Payment Details</h2>
+    <div class="bank-box">
+        <table class="bank-table">
+            {% if bank.bank_account_name %}<tr><td class="label">Account Name</td><td>{{ bank.bank_account_name }}</td></tr>{% endif %}
+            {% if bank.bank_name %}<tr><td class="label">Bank</td><td>{{ bank.bank_name }}</td></tr>{% endif %}
+            {% if bank.bank_iban %}<tr><td class="label">IBAN</td><td>{{ bank.bank_iban }}</td></tr>{% endif %}
+            {% if bank.bank_bic %}<tr><td class="label">BIC / SWIFT</td><td>{{ bank.bank_bic }}</td></tr>{% endif %}
+            {% if bank.bank_account_number %}<tr><td class="label">Account Number</td><td>{{ bank.bank_account_number }}</td></tr>{% endif %}
+            {% if bank.bank_sort_code %}<tr><td class="label">Sort Code</td><td>{{ bank.bank_sort_code }}</td></tr>{% endif %}
+            <tr><td class="label">Amount</td><td>&euro;{{ total }}</td></tr>
+            <tr><td class="label">Reference</td><td>{{ payment_reference }}</td></tr>
+        </table>
+        {% if bank.payment_reference_note %}<div class="note">{{ bank.payment_reference_note }}</div>{% endif %}
+    </div>
+
+    <p class="note">Please ensure payment reaches the account on or before {{ due_date }}.</p>
+
+    <div id="footerContent" class="footer">
+        {{ company_name }} &mdash; This invoice was generated automatically.
+    </div>
+</body>
+
+</html>

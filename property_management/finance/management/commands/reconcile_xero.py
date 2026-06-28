@@ -2,10 +2,9 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from finance.models import XeroToken
 from finance.utils import (
-    _auth_headers, 
-    get_xero_bank_accounts, 
-    get_unreconciled_statement_lines, 
-    find_matching_invoice, 
+    get_xero_bank_accounts,
+    get_unreconciled_statement_lines,
+    find_matching_invoice,
     create_xero_payment
 )
 import requests
@@ -33,22 +32,14 @@ class Command(BaseCommand):
                  # Let's just return for now to be safe.
                  return
 
-        # 1. Get Tokens
-        token = XeroToken.objects.first()
-        if not token:
-            self.stdout.write(self.style.ERROR("No Xero token found. Please connect Xero in the dashboard."))
+        # 1. Get a valid (auto-refreshed) token and headers.
+        from finance.xero_client import get_db_auth_headers
+        headers = get_db_auth_headers()
+        if not headers:
+            self.stdout.write(self.style.ERROR(
+                "No valid Xero token (not connected or refresh failed). Please reconnect Xero in the dashboard."
+            ))
             return
-
-        # Mock request object for _auth_headers or construct manually
-        # Since _auth_headers expects a request with session, we'll manually construct headers here
-        # or update utils to handle no-request. 
-        # For now, let's construct manually using the token we fetched.
-        headers = {
-            "Authorization": f"Bearer {token.access_token}",
-            "Xero-tenant-id": token.tenant_id,
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
 
         # 2. Get Bank Accounts
         accounts = get_xero_bank_accounts(headers)

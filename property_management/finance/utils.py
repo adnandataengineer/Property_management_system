@@ -1,32 +1,19 @@
 import requests
 from django.conf import settings
-from .views import _auth_headers
+from .xero_client import get_db_auth_headers
 
 def create_invoice_from_booking(booking_request, request):
     """
     Creates an invoice in Xero for the given BookingRequest.
     Returns True if successful, False otherwise.
     """
-    # Try to get headers from session, or fallback to DB
-    try:
-        headers = _auth_headers(request)
-    except Exception:
-        # If session fails (e.g. anonymous user), try DB
-        from .models import XeroToken
-        token = XeroToken.objects.first()
-        if not token:
-            print("No Xero token found in DB.")
-            return False
-            
-        # TODO: Check expiry and refresh if needed
-        # For now assuming token is valid or we just fail
-        headers = {
-            "Authorization": f"Bearer {token.access_token}",
-            "Xero-tenant-id": token.tenant_id,
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-    
+    # Always use the stored token, auto-refreshing it if expired. This works in
+    # both admin (session) and anonymous (onboarding) contexts.
+    headers = get_db_auth_headers()
+    if not headers:
+        print("No valid Xero token available (not connected or refresh failed).")
+        return False
+
     # 1. Ensure contact exists or create one
     contact_data = {
         "Name": booking_request.full_name,
@@ -191,22 +178,13 @@ def create_invoice_for_tenant(tenant, invoice_date=None):
     if not invoice_date:
         from django.utils import timezone
         invoice_date = timezone.now().date()
-        
-    # Get headers (reuse logic or call _auth_headers if we had request, but we don't here)
-    # So we copy the DB token logic
-    from .models import XeroToken
-    token = XeroToken.objects.first()
-    if not token:
-        print("No Xero token found.")
+
+    # Valid (auto-refreshed) token from the DB — no active session here.
+    headers = get_db_auth_headers()
+    if not headers:
+        print("No valid Xero token available (not connected or refresh failed).")
         return False
-        
-    headers = {
-        "Authorization": f"Bearer {token.access_token}",
-        "Xero-tenant-id": token.tenant_id,
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-    }
-    
+
     booking = tenant.booking_request
     if not booking or not booking.room:
         print(f"Tenant {tenant} has no booking/room details.")

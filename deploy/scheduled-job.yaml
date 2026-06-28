@@ -1,0 +1,33 @@
+# DigitalOcean App Platform — scheduled (cron) job component.
+#
+# This is the JOB COMPONENT to ADD to your existing app spec. Do NOT replace
+# your whole spec with this file — it only describes the new job. Add this block
+# under the top-level `jobs:` key of your app spec (see DEPLOYMENT_SCHEDULING.md).
+#
+# Runs once a day at 07:00 Europe/Dublin and executes both finance jobs via the
+# combined management command.
+#
+# Adjust `github.repo`/`branch` and `source_dir` to match your existing web
+# component so the job builds from the same source.
+
+- name: daily-finance
+  kind: SCHEDULED
+  schedule:
+    cron: "0 7 * * *"        # every day at 07:00 (min interval allowed is 15 min)
+    time_zone: Europe/Dublin
+  github:
+    repo: <your-org>/<your-repo>
+    branch: main
+    deploy_on_push: true
+  source_dir: /
+  environment_slug: python
+  instance_size_slug: apps-s-1vcpu-0.5gb
+  run_command: python property_management/manage.py run_daily_finance_tasks
+  # The job needs the same runtime env vars as the web service (DATABASE_URL,
+  # email + Xero credentials, etc.). In the control panel you can bind these to
+  # the app-level env, or copy them here as envs:
+  # envs:
+  #   - key: DATABASE_URL
+  #     scope: RUN_TIME
+  #     type: SECRET
+  #     value: ${db.DATABASE_URL}
